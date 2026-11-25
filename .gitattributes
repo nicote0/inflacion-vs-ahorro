@@ -1,0 +1,8 @@
+# Saltos de línea LF en el repo y en la copia local, en cualquier sistema operativo.
+* text=auto eol=lf
+
+# Archivos binarios: sin conversión.
+*.png binary
+*.jpg binary
+*.ico binary
+*.xlsx binary

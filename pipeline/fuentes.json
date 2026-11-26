@@ -1,0 +1,8 @@
+[
+  { "id": "ipc_nacional", "nombre": "IPC nacional, nivel general (INDEC)", "tipo": "indec_series",
+    "serie": "148.3_INIVELNAL_DICI_M_26", "desde": "2016-12-01", "periodicidad": "mensual", "toleranciaDias": 45 },
+  { "id": "dolar_minorista", "nombre": "Tipo de cambio minorista, promedio vendedor (BCRA)", "tipo": "bcra_monetarias",
+    "variable": 4, "desde": "2016-12-01", "periodicidad": "diaria", "toleranciaDias": 5 },
+  { "id": "tasa_plazo_fijo_30d", "nombre": "Tasa de depósitos a 30 días (BCRA)", "tipo": "bcra_monetarias",
+    "variable": 12, "desde": "2016-12-01", "periodicidad": "diaria", "toleranciaDias": 5 }
+]

@@ -1,0 +1,15 @@
+{
+  "name": "pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ingesta de series del INDEC y el BCRA para inflacion-vs-ahorro",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "ingesta": "node src/cli.js"
+  },
+  "license": "MIT"
+}

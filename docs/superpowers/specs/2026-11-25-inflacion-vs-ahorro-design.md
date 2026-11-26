@@ -44,7 +44,7 @@ Verificadas el 25/11/2026.
 | Tipo de cambio minorista, promedio vendedor | API de estadísticas del BCRA v4, variable 4 | Diaria (días hábiles) | 2010-06-01 | 2026-11-25 |
 | Tasa de depósitos a 30 días de plazo (TNA, %) | API de estadísticas del BCRA v4, variable 12 | Diaria (días hábiles) | 1985-08-26 | 2026-11-24 |
 
-Pendiente de verificar en M1: formato exacto de las respuestas, paginación y límites de cada API, y si la variable 12 es la tasa a la que accede un ahorrista minorista o un promedio general.
+La variable 12 es el promedio de todos los depositantes, incluidas empresas. Se eligió sobre la 1190 (personas humanas, todos los plazos) porque coincide con la renovación cada 30 días del cálculo (decisión del 26/11/2026). Formato, paginación y límites de cada API: ver `docs/superpowers/plans/2026-11-26-m1-ingesta.md`.
 
 El período comparable arranca en 2016-12, primer mes del IPC nacional con esta base.
 

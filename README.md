@@ -36,7 +36,32 @@ Verificadas el 25/11/2026.
 | Tipo de cambio minorista, promedio vendedor | [API de estadísticas del BCRA](https://api.bcra.gob.ar/estadisticas/v4.0/monetarias) v4, variable 4 | Diaria (días hábiles) | 2010-06 | 2026-11-25 |
 | Tasa de depósitos a 30 días (TNA) | API de estadísticas del BCRA v4, variable 12 | Diaria (días hábiles) | 1985-08 | 2026-11-24 |
 
-El período comparable empieza en diciembre de 2016, primer mes del IPC nacional con esta base. Antes de programar cada fuente se confirma el formato de respuesta, la paginación y los límites de la API ([#20](https://github.com/nicote0/inflacion-vs-ahorro/issues/20), [#44](https://github.com/nicote0/inflacion-vs-ahorro/issues/44)).
+El período comparable empieza en diciembre de 2016, primer mes del IPC nacional con esta base. Las fuentes se configuran en [`pipeline/fuentes.json`](pipeline/fuentes.json).
+
+### Cómo responde cada API
+
+**INDEC (API de series de tiempo).**
+- Datos: `https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&format=csv&start_date=2016-12-01&limit=1000`.
+- Devuelve un CSV con las columnas `indice_tiempo,ipc_nivel_general_nacional`, con fecha `AAAA-MM-01` y punto decimal.
+- Admite hasta 1000 filas por pedido. Si llegan 1000, el script avisa que la serie puede estar truncada.
+- Fecha declarada: `meta[1].field.time_index_end` en la respuesta JSON con `metadata=full`.
+
+**BCRA (API de estadísticas v4).**
+- Datos: `https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/{variable}?desde=AAAA-MM-DD&hasta=AAAA-MM-DD&limit=3000&offset=N`.
+- Devuelve JSON con `results[0].detalle`, una lista de `{fecha, valor}` de la fecha más nueva a la más vieja, y el total en `metadata.resultset.count`.
+- Admite hasta 3000 filas por pedido. Con más, responde 400 con el mensaje en `errorMessages`. La tasa ya tiene más de 2400 filas desde 2016, así que el script pagina con `offset`.
+- Fecha declarada: `ultFechaInformada` del catálogo (`/monetarias`, unas 4000 variables en 2 páginas).
+
+### Frescura
+
+Para cada fuente se toma el fin del período de la última observación real: el último día del mes en series mensuales y la misma fecha en las diarias. Si desde ese día pasaron como mucho N días, la fuente está **vigente**. Si pasaron más, está **desactualizada**.
+
+| Periodicidad | Tolerancia | Por qué |
+|---|---|---|
+| Mensual (IPC) | 45 días | El INDEC publica el IPC de un mes a mediados del siguiente |
+| Diaria (BCRA) | 5 días | Cubre fines de semana largos y feriados |
+
+El resultado se guarda en `data/frescura.json`. Si una fuente falla, la frescura se calcula con la última copia guardada, para no ocultar hasta cuándo había datos.
 
 ## Cómo se calcula
 
@@ -46,7 +71,7 @@ El período comparable empieza en diciembre de 2016, primer mes del IPC nacional
 - **Plazo fijo:** se renueva cada 30 días con la tasa vigente el día de la renovación. Un último tramo menor a 30 días no suma intereses.
 - **Resultado real:** cuánto ganó o perdió cada opción después de descontar la inflación.
 
-Supuestos: no se consideran impuestos ni comisiones, y el dólar se toma al precio de venta. El detalle está en el [documento de diseño](docs/superpowers/specs/2026-11-25-inflacion-vs-ahorro-design.md).
+Supuestos: no se consideran impuestos ni comisiones, y el dólar se toma al precio de venta. La tasa es el promedio de los plazos fijos a 30 días de todos los depositantes, incluidas empresas. Se eligió sobre la tasa de personas humanas porque esa mezcla todos los plazos, y la simulación renueva cada 30 días. El detalle está en el [documento de diseño](docs/superpowers/specs/2026-11-25-inflacion-vs-ahorro-design.md).
 
 ## Arquitectura
 
@@ -109,7 +134,7 @@ El proyecto empezó como un observatorio de datos públicos de Córdoba. Al veri
 
 | Milestone | Contenido | Estado |
 |---|---|---|
-| M1 Ingesta | Verificación de APIs, descarga con copia cruda y chequeo de frescura | En curso |
+| M1 Ingesta | Verificación de APIs, descarga con copia cruda y chequeo de frescura | Hecho |
 | M2 Base y carga | Esquema, series mensuales, cálculo de la simulación y carga idempotente | Pendiente |
 | M3 API | Simulación, series, comparativa, indicadores y frescura | Pendiente |
 | M4 Dashboard | Calculadora, series y tabla con CSV | Pendiente |
@@ -119,7 +144,17 @@ Las tareas están en las [issues](https://github.com/nicote0/inflacion-vs-ahorro
 
 ## Cómo correrlo
 
-Se completa a medida que avance el proyecto. Las credenciales se configuran con variables de entorno. El repo incluirá un `.env.example` con los nombres de las variables, sin valores.
+Requisito: Node.js 20 o superior. La ingesta no usa dependencias externas ni credenciales.
+
+```bash
+cd pipeline
+npm test          # tests
+npm run ingesta   # descarga las fuentes y calcula la frescura
+```
+
+La ingesta guarda las copias crudas en `data/raw/`, con un manifiesto de fechas y hashes, y el estado de cada fuente en `data/frescura.json`. La carpeta `data/` no se sube al repo. Si una copia no cambió desde la descarga anterior, no se duplica. Si alguna fuente falla, el proceso termina con código 1.
+
+Las partes siguientes (base de datos, API y dashboard) se agregan en los próximos milestones. Las credenciales se van a configurar con variables de entorno, y el repo va a incluir un `.env.example` con los nombres de las variables, sin valores.
 
 ## Licencia
 

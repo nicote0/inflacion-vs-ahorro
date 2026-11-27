@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes } from 'react-router-dom';
 import { Calculadora } from './paginas/Calculadora.jsx';
+import { Series } from './paginas/Series.jsx';
 import { fechaCorta, nombreMes } from './logica/formato.js';
 
 const ETIQUETAS = { ipc_nacional: 'IPC (INDEC)', dolar_minorista: 'Dólar (BCRA)', tasa_plazo_fijo_30d: 'Tasa (BCRA)' };
@@ -45,13 +46,13 @@ export function Marco({ api, children }) {
   );
 }
 
-export function App({ api, paginas = {} }) {
+export function App({ api }) {
   return (
     <BrowserRouter>
       <Marco api={api}>
         <Routes>
           <Route path="/" element={<Calculadora api={api} />} />
-          {Object.entries(paginas).map(([ruta, Pagina]) => <Route key={ruta} path={ruta} element={<Pagina api={api} />} />)}
+          <Route path="/series" element={<Series api={api} />} />
         </Routes>
       </Marco>
     </BrowserRouter>

@@ -109,7 +109,16 @@ h1, h2, p { margin: 0; }
 .desplegables ul.fuentes { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 14px; }
 .link-consulta { font-family: var(--mono); font-size: 13px; padding: 12px 14px; border-radius: 8px; background: var(--caja); overflow-wrap: anywhere; }
 
-/* Tablas (Series y Estado de los datos) */
+/* Series y Estado de los datos */
+.series, .datos { display: flex; flex-direction: column; gap: 28px; }
+.titulo-pagina { font-size: clamp(32px, 4vw, 48px); font-weight: 600; letter-spacing: -0.025em; }
+.filtros { display: flex; flex-wrap: wrap; gap: 16px 20px; align-items: end; padding: 18px 0; border-block: 1px solid var(--linea); }
+.filtros label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--texto-3); }
+.filtros select { min-height: 44px; border: 1px solid var(--borde-suave); border-radius: 8px; background: #FFFFFF; padding: 0 10px; font-size: 16px; color: var(--tinta); }
+.tabla-encabezado { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.tabla-encabezado h2 { font-size: 24px; font-weight: 600; }
+
+/* Tablas */
 .tabla-caja { overflow-x: auto; border: 1px solid var(--linea); border-radius: 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 15px; }
 th, td { padding: 10px 14px; border-bottom: 1px solid var(--linea); text-align: left; }

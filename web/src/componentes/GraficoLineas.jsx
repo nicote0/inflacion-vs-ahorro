@@ -1,6 +1,6 @@
 // Gráfico de líneas en SVG propio: guías, años, anotaciones de hechos, valor final y tooltip.
 import { useState } from 'react';
-import { nombreMes } from '../logica/formato.js';
+import { fechaCorta, nombreMes } from '../logica/formato.js';
 
 const ANCHO = 900;
 const ALTO = 560;
@@ -38,7 +38,9 @@ export function GraficoLineas({
   };
 
   const guias = [0, 0.25, 0.5, 0.75, 1].map((f) => minimo + f * (maximo - minimo));
-  const anios = meses.map((m, i) => ({ m, i })).filter(({ m, i }) => i === 0 || m.endsWith('-01'));
+  // Los puntos pueden ser meses ('AAAA-MM') o días ('AAAA-MM-DD'): el año se marca cuando cambia.
+  const anios = meses.map((m, i) => ({ m, i })).filter(({ m, i }) => i === 0 || m.slice(0, 4) !== meses[i - 1].slice(0, 4));
+  const etiquetaPunto = (m) => (m.length === 7 ? nombreMes(m, { largo: true }) : fechaCorta(m));
   const centroDelAnio = (anio) => {
     const indices = meses.map((m, i) => (m.startsWith(anio) ? i : -1)).filter((i) => i >= 0);
     return indices.length ? x((indices[0] + indices.at(-1)) / 2) : null;
@@ -111,7 +113,7 @@ export function GraficoLineas({
       </svg>
       {indice != null && (
         <div className="grafico__tooltip" style={{ left: `${(x(indice) / ANCHO) * 100}%` }}>
-          <strong>{nombreMes(meses[indice], { largo: true })}</strong>
+          <strong>{etiquetaPunto(meses[indice])}</strong>
           {series.map((s) => (
             <span key={s.id}><i style={{ background: s.color }} aria-hidden="true" />{s.nombre}: {s.valores[indice] == null ? 'sin dato' : formatoValor(s.valores[indice])}</span>
           ))}

@@ -1,5 +1,8 @@
 {
   "functions": {
-    "api/[[...ruta]].js": { "maxDuration": 10 }
-  }
+    "api/index.js": { "maxDuration": 10 }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ]
 }

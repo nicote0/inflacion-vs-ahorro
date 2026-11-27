@@ -4,10 +4,17 @@ import { leerFotoDeLaBase } from './base.js';
 import { crearCargadorDeFoto } from './cargador.js';
 import { ErrorApi } from './errores.js';
 
+// Saca el prefijo /api y los parámetros que agrega Vercel por el nombre del archivo
+// (por ejemplo "[...ruta]=simulacion"), que la validación estricta de la API rechazaría.
 export function quitarPrefijo(url) {
-  const sinPrefijo = url.replace(/^\/api(?=\/|\?|$)/, '');
-  if (sinPrefijo === '' || sinPrefijo.startsWith('?')) return `/${sinPrefijo}`;
-  return sinPrefijo;
+  const [camino, consulta = ''] = url.split(/\?(.*)/s);
+  const sinPrefijo = camino.replace(/^\/api(?=\/|$)/, '') || '/';
+  const parametros = new URLSearchParams(consulta);
+  for (const clave of [...parametros.keys()]) {
+    if (/^\[.*\]$/.test(clave) || clave.startsWith('...')) parametros.delete(clave);
+  }
+  const limpia = parametros.toString();
+  return limpia ? `${sinPrefijo}?${limpia}` : sinPrefijo;
 }
 
 function cargadorDesdeEntorno(entorno) {

@@ -12,6 +12,12 @@ test('quitarPrefijo saca /api y conserva la consulta', () => {
   assert.equal(quitarPrefijo('/api?x=1'), '/?x=1');
 });
 
+test('quitarPrefijo descarta los parámetros que agrega Vercel por el nombre del archivo', () => {
+  assert.equal(quitarPrefijo('/api/simulacion?desde=2020-01&%5B...ruta%5D=simulacion'), '/simulacion?desde=2020-01');
+  assert.equal(quitarPrefijo('/api/indicadores?[...ruta]=indicadores'), '/indicadores');
+  assert.equal(quitarPrefijo('/api/series/x?...ruta=series/x&desde=2020-01-01'), '/series/x?desde=2020-01-01');
+});
+
 async function conServidor(manejador, fn) {
   const servidor = http.createServer(manejador);
   await new Promise((r) => servidor.listen(0, '127.0.0.1', r));

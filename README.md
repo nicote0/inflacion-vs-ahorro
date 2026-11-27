@@ -114,6 +114,56 @@ Correr la carga dos veces deja las mismas filas, y un valor corregido en la fuen
 
 Con las tres series, la base ocupa unos pocos MB, y una corrida diaria dura segundos.
 
+## API
+
+API HTTP de solo lectura, hecha con Fastify. Devuelve JSON. La documentación interactiva (OpenAPI) está en `/docs` y se genera de los mismos schemas que validan cada pedido. Las fechas van como `AAAA-MM-DD` y los meses como `AAAA-MM`.
+
+| Endpoint | Qué devuelve |
+|---|---|
+| `GET /simulacion?desde=2020-01&hasta=2025-01&monto=100000` | Las tres opciones (plazo fijo, dólar oficial y pesos quietos) con valor final nominal, valor real, resultado real en % y si le ganaron a la inflación. Suma la evolución mes a mes en pesos del mes final, hasta qué fecha llega cada fuente y el rango de meses válido |
+| `GET /indicadores` | Cada indicador con nombre, unidad, fuente, periodicidad y rango de fechas con datos |
+| `GET /series/dolar_minorista?desde=2026-11-01&hasta=2026-11-30` | La serie de un indicador, ordenada por fecha. Las series mensuales usan el primer día del mes |
+| `GET /comparativa?indicadores=ipc_nacional,dolar_minorista&desde=2026-01&hasta=2026-10` | Dos o más indicadores alineados por mes. Por defecto da la variación % mensual (inflación del mes contra suba del dólar del mes). Con `medida=nivel` da los valores en su unidad. Un mes sin dato es `null` |
+| `GET /frescura` | Cada fuente con su estado, último dato real, fecha declarada, fecha del chequeo y meses de atraso. Una fuente que nunca se verificó aparece como `sin_verificar` |
+
+Ejemplo de `/simulacion?desde=2020-01&hasta=2025-01&monto=100000` (recortado):
+
+```json
+{
+  "factorInflacion": 27.1336,
+  "opciones": {
+    "plazoFijo":    { "valorFinalNominal": 1375348.17, "valorReal": 50688.03, "resultadoRealPct": -49.31, "leGanoALaInflacion": false },
+    "dolar":        { "valorFinalNominal": 1699989.90, "valorReal": 62652.60, "resultadoRealPct": -37.35, "leGanoALaInflacion": false },
+    "pesosQuietos": { "valorFinalNominal": 100000,     "valorReal": 3685.47,  "resultadoRealPct": -96.31, "leGanoALaInflacion": false }
+  },
+  "evolucion": [{ "mes": "2020-01", "plazoFijo": 2713359.01, "dolar": 2713359.01, "pesosQuietos": 2713359.01 }, "..."],
+  "datosHasta": { "ipc": "2026-10-01", "dolar": "2026-11-26", "tasa": "2026-11-25" },
+  "rango": { "mesMinimo": "2016-12", "mesMaximo": "2026-10" }
+}
+```
+
+**Errores.** Todos usan el mismo formato: `{ "error": { "codigo": "...", "mensaje": "..." } }`.
+
+| Código | Status | Cuándo |
+|---|---|---|
+| `PARAMETRO_INVALIDO` | 400 | Un parámetro falta, tiene mal formato o no existe en la ruta |
+| `RANGO_INVERTIDO` | 400 | `desde` es posterior a `hasta` |
+| `PERIODO_INVALIDO` | 400 | En `/simulacion`, el mes final no es posterior al inicial o un mes está mal escrito |
+| `MONTO_INVALIDO` | 400 | El monto no es un número mayor que 0 o supera 1e12 |
+| `PERIODO_FUERA_DE_RANGO` | 400 | No hay datos para todo el período. El mensaje indica el rango válido |
+| `INDICADOR_DESCONOCIDO` | 404 en `/series`, 400 en `/comparativa` | El indicador no existe |
+| `RUTA_INEXISTENTE` | 404 | La ruta no existe |
+| `DATOS_NO_DISPONIBLES` | 503 | La base no responde y la API todavía no tiene datos en memoria |
+| `ERROR_INTERNO` | 500 | Error inesperado. Nunca incluye detalles de la base |
+
+**Cómo protege el plan gratuito.** En el plan gratuito, pasarse de un límite no genera cobros, pero suspende el servicio. Para que un uso intensivo de la API no deje la base suspendida, hay tres capas:
+
+1. **Datos en memoria.** La API lee todas las series de la base de una vez y las guarda en memoria por 1 hora. Cualquier consulta, incluida una simulación con cualquier monto y período, se responde desde ahí. Los pedidos simultáneos comparten una sola lectura. Si Neon no responde, la API sigue usando los últimos datos que tiene.
+2. **Caché del CDN.** Las respuestas exitosas llevan `Cache-Control: public, s-maxage=3600, stale-while-revalidate=86400`, así los pedidos repetidos ni llegan a la función.
+3. **Tope de cómputo en Neon.** En el panel de Neon, en el proyecto, se edita la compute de la rama `production` y se fija el máximo de autoscaling en 0,25 CU. Así las 100 CU-horas del plan rinden unas 400 horas de base encendida por mes.
+
+**Conexión.** La API usa `DATABASE_URL_POOLED`, la URL de Neon con `-pooler`. Si no está definida, usa `DATABASE_URL`. CORS permite `localhost` y los orígenes de `CORS_ORIGENES`, una lista separada por comas.
+
 ## Arquitectura
 
 ```
@@ -177,7 +227,7 @@ El proyecto empezó como un observatorio de datos públicos de Córdoba. Al veri
 |---|---|---|
 | M1 Ingesta | Verificación de APIs, descarga con copia cruda y chequeo de frescura | Hecho |
 | M2 Base y carga | Esquema, series mensuales, cálculo de la simulación y carga idempotente | Hecho |
-| M3 API | Simulación, series, comparativa, indicadores y frescura | Pendiente |
+| M3 API | Simulación, series, comparativa, indicadores y frescura | Hecho |
 | M4 Dashboard | Calculadora, series y tabla con CSV | Pendiente |
 | M5 Automatización y despliegue | Workflow diario, despliegue y Docker Compose | Pendiente |
 
@@ -188,13 +238,15 @@ Las tareas están en las [issues](https://github.com/nicote0/inflacion-vs-ahorro
 Requisitos: Node.js 20 o superior, y Docker para la base local.
 
 ```bash
-npm install                          # en la raíz (npm workspaces: pipeline y simulacion)
+npm install                          # en la raíz (npm workspaces: pipeline, simulacion y api)
 cp .env.example .env                 # completar usuario, contraseña, base y las dos URLs
 docker compose up -d                 # Postgres 17 local, con una base de desarrollo y una de tests
 npm test                             # tests unitarios, sin red ni base
 npm run test:db -w pipeline          # tests de integración contra la base de tests
 npm run pipeline -w pipeline         # descarga, carga en la base de DATABASE_URL y registra la ejecución
 npm run simular -w pipeline -- --desde 2020-01 --hasta 2025-01 --monto 100000
+npm run test:db -w api               # integración de la API contra la base de tests
+npm run api -w api                   # API en http://127.0.0.1:3000 (documentación en /docs)
 ```
 
 - **Base local o Neon:** `DATABASE_URL` puede apuntar al Postgres de Docker (`postgres://USUARIO:CLAVE@localhost:5432/BASE`) o a Neon. `TEST_DATABASE_URL` apunta a la base de tests local, que se crea sola con el sufijo `_test`. Los tests de integración borran y recrean su esquema, así que nunca hay que apuntarla a la base real. Si falta, `test:db` falla con un aviso; no se saltean en silencio.

@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test": "node --test",
-    "test:db": "node --env-file-if-exists=../.env --test --test-concurrency=1 \"test-db/*.integracion.js\""
+    "test:db": "node --env-file-if-exists=../.env --test --test-concurrency=1 \"test-db/*.integracion.js\"",
+    "api": "node --env-file-if-exists=../.env src/servidor.js"
   },
   "license": "MIT",
   "dependencies": {

@@ -18,6 +18,32 @@ test('inflacionAnual compara diciembre contra diciembre dentro del período', ()
   expect(r.map((x) => Number(x.pct.toFixed(1)))).toEqual([50.9, 94.8, 211.4, 117.8]);
 });
 
+test('las anotaciones van en la franja de arriba, sin pisar las líneas ni entre ellas', () => {
+  const meses = Array.from({ length: 61 }, (_, i) => `${2020 + Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}`);
+  const valores = meses.map(() => 3000);
+  const { container } = render(
+    <GraficoLineas
+      meses={meses}
+      series={[{ id: 'dolar', nombre: 'Dólar', color: '#000', valores }, { id: 'plazoFijo', nombre: 'Plazo fijo', color: '#00f', valores }]}
+      anotaciones={[
+        { mes: '2022-12', serie: 'plazoFijo', lineas: ['Dic 2022: la inflación del año', 'llega a 95 %'] },
+        { mes: '2023-12', serie: 'dolar', lineas: ['Dic 2023: el dólar oficial', 'sube 85 % en un mes'] },
+        { mes: '2024-06', serie: 'plazoFijo', lineas: ['2024: la tasa cae de 120 % a 32 %', 'y el plazo fijo se queda atrás'] },
+      ]}
+    />,
+  );
+  const topeLineas = Math.min(...[...container.querySelectorAll('path.linea')]
+    .flatMap((p) => [...p.getAttribute('d').matchAll(/[ML][\d.]+ ([\d.]+)/g)].map((m) => Number(m[1]))));
+  const textos = [...container.querySelectorAll('.grafico__notas text')];
+  expect(textos).toHaveLength(3);
+  for (const t of textos) expect(Number(t.getAttribute('y')) + 18).toBeLessThan(topeLineas);
+  // Dos anotaciones en el mismo renglón no pueden solaparse horizontalmente.
+  const cajas = textos.map((t) => ({ y: t.getAttribute('y'), x0: Number(t.dataset.x0), x1: Number(t.dataset.x1) }));
+  for (const a of cajas) for (const b of cajas) {
+    if (a !== b && a.y === b.y) expect(a.x1 <= b.x0 || b.x1 <= a.x0).toBe(true);
+  }
+});
+
 test('GraficoLineas dibuja una línea por serie, las anotaciones y el valor final', () => {
   const { container } = render(
     <GraficoLineas

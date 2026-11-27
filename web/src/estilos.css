@@ -101,7 +101,7 @@ h1, h2, p { margin: 0; }
 .grafico__notas text { font-family: var(--sans); font-style: italic; font-size: 14px; fill: var(--tinta); }
 .grafico__finales text { font-family: var(--sans); font-size: 14px; font-weight: 700; }
 .grafico__cursor { stroke: var(--texto-3); stroke-width: 1; stroke-dasharray: 3 3; }
-.grafico__tooltip { position: absolute; top: 0; transform: translateX(-50%); background: #FFFFFF; border: 1px solid var(--linea); border-radius: 8px; padding: 8px 12px; font-size: 13px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; white-space: nowrap; }
+.grafico__tooltip { position: absolute; top: 34%; transform: translateX(-50%); background: #FFFFFF; border: 1px solid var(--linea); border-radius: 8px; padding: 8px 12px; font-size: 13px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; white-space: nowrap; }
 .grafico__tooltip i { display: inline-block; width: 10px; height: 3px; margin-right: 6px; vertical-align: middle; }
 
 /* Desplegables */

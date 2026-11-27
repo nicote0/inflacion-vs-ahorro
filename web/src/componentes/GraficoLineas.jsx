@@ -7,7 +7,12 @@ const ALTO = 560;
 const X0 = 40;
 const X1 = 880;
 const Y_BASE = 470;
-const Y_TOPE = 40;
+// Con anotaciones, las líneas empiezan más abajo y arriba queda una franja de dos renglones para el texto.
+const Y_TOPE_SIN_NOTAS = 40;
+const Y_TOPE_CON_NOTAS = 178;
+const RENGLONES = [28, 72, 116];
+const ANCHO_LETRA = 7.4;
+const SEPARACION = 14;
 
 // Redondea hacia arriba a 1, 2 o 5 × 10ⁿ para que las guías queden en números lindos.
 export function techoLindo(v) {
@@ -20,6 +25,7 @@ export function GraficoLineas({
   meses, series, anotaciones = [], inflacionPorAnio = [], formatoEje = (v) => String(v), formatoValor = (v) => String(v), descripcion,
 }) {
   const [indice, setIndice] = useState(null);
+  const Y_TOPE = anotaciones.length ? Y_TOPE_CON_NOTAS : Y_TOPE_SIN_NOTAS;
   const todos = series.flatMap((s) => s.valores).filter((v) => v != null);
   const minimo = Math.min(0, ...todos);
   const maximo = techoLindo(Math.max(...todos, 0));
@@ -45,17 +51,35 @@ export function GraficoLineas({
     const indices = meses.map((m, i) => (m.startsWith(anio) ? i : -1)).filter((i) => i >= 0);
     return indices.length ? x((indices[0] + indices.at(-1)) / 2) : null;
   };
+  // Cada anotación va en la franja de arriba: primer renglón si entra, si no el segundo.
+  const ocupado = RENGLONES.map(() => []);
   const notas = anotaciones
-    .map((a, k) => {
+    .map((a) => {
       const i = meses.indexOf(a.mes);
-      const serie = series.find((s) => s.id === a.serie);
-      const v = serie?.valores[i];
-      if (i < 0 || v == null) return null;
-      const xi = x(i);
-      const yv = y(v);
-      return { ...a, xi, yv, yTexto: Math.max(Y_TOPE + 14, yv - 70 - (k % 2) * 60), derecha: xi > ANCHO / 2 };
+      const v = series.find((s) => s.id === a.serie)?.valores[i];
+      return i < 0 || v == null ? null : { ...a, xi: x(i), yv: y(v) };
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a, b) => a.xi - b.xi)
+    .map((n) => {
+      const ancho = Math.max(...n.lineas.map((l) => l.length)) * ANCHO_LETRA;
+      const caja = (derecha) => {
+        const x0 = derecha ? n.xi - 6 - ancho : n.xi + 6;
+        return { derecha, x0, x1: x0 + ancho };
+      };
+      const preferida = n.xi > ANCHO / 2;
+      // Lados posibles: primero el preferido; el otro solo si el texto entra en el ancho del gráfico.
+      const lados = [caja(preferida), caja(!preferida)].filter((c) => c.x0 >= 0 && c.x1 <= ANCHO);
+      const libre = (r, c) => ocupado[r].every(([a0, a1]) => c.x1 + SEPARACION <= a0 || a1 + SEPARACION <= c.x0);
+      let elegido = null;
+      for (let r = 0; r < RENGLONES.length && !elegido; r++) {
+        const c = lados.find((l) => libre(r, l));
+        if (c) elegido = { ...c, renglon: r };
+      }
+      elegido ??= { ...(lados[0] ?? caja(preferida)), renglon: RENGLONES.length - 1 };
+      ocupado[elegido.renglon].push([elegido.x0, elegido.x1]);
+      return { ...n, derecha: elegido.derecha, x0: elegido.x0, x1: elegido.x1, yTexto: RENGLONES[elegido.renglon] };
+    });
 
   const alMover = (evento) => {
     const caja = evento.currentTarget.getBoundingClientRect();
@@ -91,9 +115,10 @@ export function GraficoLineas({
         <g className="grafico__notas">
           {notas.map((n) => (
             <g key={n.mes}>
-              <line x1={n.xi} x2={n.xi} y1={n.yTexto + 26} y2={n.yv} />
+              <line x1={n.xi} x2={n.xi} y1={n.yTexto - 12} y2={n.yv} />
               <circle cx={n.xi} cy={n.yv} r="3.5" />
-              <text x={n.derecha ? n.xi - 6 : n.xi + 6} y={n.yTexto} textAnchor={n.derecha ? 'end' : 'start'}>
+              <text x={n.derecha ? n.xi - 6 : n.xi + 6} y={n.yTexto} textAnchor={n.derecha ? 'end' : 'start'}
+                data-x0={n.x0.toFixed(1)} data-x1={n.x1.toFixed(1)} paintOrder="stroke" stroke="#EEF0EA" strokeWidth="4" strokeLinejoin="round">
                 {n.lineas.map((l, k) => <tspan key={l} x={n.derecha ? n.xi - 6 : n.xi + 6} dy={k ? 18 : 0}>{l}</tspan>)}
               </text>
             </g>

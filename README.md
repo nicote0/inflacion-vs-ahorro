@@ -61,7 +61,7 @@ Para cada fuente se toma el fin del período de la última observación real: el
 | Mensual (IPC) | 45 días | El INDEC publica el IPC de un mes a mediados del siguiente |
 | Diaria (BCRA) | 5 días | Cubre fines de semana largos y feriados |
 
-El resultado se guarda en `data/frescura.json`. Si una fuente falla, la frescura se calcula con la última copia guardada, para no ocultar hasta cuándo había datos.
+El resultado se guarda en `control.frescura` y, para uso local, en `data/frescura.json`. Si una fuente falla, la frescura se calcula con la última fecha cargada en la base. Si la base todavía no tiene datos de esa fuente, se usa la última copia guardada. Así una caída no oculta hasta cuándo había datos.
 
 ## Cómo se calcula
 
@@ -72,6 +72,47 @@ El resultado se guarda en `data/frescura.json`. Si una fuente falla, la frescura
 - **Resultado real:** cuánto ganó o perdió cada opción después de descontar la inflación.
 
 Supuestos: no se consideran impuestos ni comisiones, y el dólar se toma al precio de venta. La tasa es el promedio de los plazos fijos a 30 días de todos los depositantes, incluidas empresas. Se eligió sobre la tasa de personas humanas porque esa mezcla todos los plazos, y la simulación renueva cada 30 días. El detalle está en el [documento de diseño](docs/superpowers/specs/2026-11-25-inflacion-vs-ahorro-design.md).
+
+### Verificación del cálculo
+
+El cálculo vive en un paquete aparte, `simulacion/`, que no accede a la base. Sus tests incluyen casos chicos resueltos a mano, con la cuenta escrita en el propio test. Además, en [`docs/verificacion/`](docs/verificacion/) hay dos planillas (enero de 2020 a enero de 2025, y junio de 2023 a junio de 2026, con $100.000) que rehacen el cálculo con fórmulas de Excel a partir de los datos de la base: IPC, dólar promedio y tasas diarias. El plazo fijo se recalcula tramo por tramo. En los dos períodos, el resultado de la planilla coincide al centavo con el del programa.
+
+## Base de datos
+
+PostgreSQL con tres capas, cada una en su propio schema:
+
+| Schema | Tablas | Para qué |
+|---|---|---|
+| `staging` | `indec_series`, `bcra_monetarias` | Los datos de la última descarga tal como llegaron, como texto, con el hash de la copia cruda de origen |
+| `modelo` | `dim_indicador`, `dim_fecha`, `hecho_diario`, `hecho_mensual` | Los datos tipados. El dólar y la tasa van a `hecho_diario`. El IPC y los promedios mensuales del dólar y de la tasa van a `hecho_mensual`, con la cantidad de días con dato de cada mes |
+| `control` | `ejecucion`, `ejecucion_fuente`, `fila_rechazada`, `frescura` | Cada corrida y el resultado de cada fuente (estado, filas insertadas, actualizadas, sin cambios y rechazadas, y mensaje de error), las filas que no se pudieron usar y el estado de frescura actual |
+
+Las migraciones están en `pipeline/migraciones/`, numeradas, y se aplican solas al correr el pipeline. Las aplicadas quedan anotadas en `public.schema_migrations`.
+
+**Cómo carga `npm run pipeline`:**
+
+1. Toma un advisory lock de Postgres. Si otra corrida lo tiene, termina sin hacer nada.
+2. Por cada fuente, descarga y guarda la copia cruda, igual que la ingesta. Si el hash es igual al de la última carga exitosa registrada en la base, la fuente queda `sin_cambios` y no se vuelve a cargar.
+3. Si hay datos nuevos, en una sola transacción:
+   - reemplaza el staging de esa fuente;
+   - tipa fechas y valores en SQL;
+   - aparta las filas que no sirven;
+   - hace un upsert en el modelo por indicador y fecha;
+   - recalcula los promedios mensuales de las series diarias.
+4. Registra el resultado de la fuente y su frescura, también cuando falla.
+
+Correr la carga dos veces deja las mismas filas, y un valor corregido en la fuente se actualiza en lugar de duplicarse.
+
+**Faltantes y errores:** una fila con fecha inválida (que no es `AAAA-MM-DD` o no existe, como `2026-02-30`), con valor vacío o no numérico, o con una fecha repetida en la misma descarga se guarda en `control.fila_rechazada` con su motivo. No se rellena, no se interpola y no frena la carga del resto. Un mes sin observaciones no tiene fila. Si una fecha desaparece de la fuente, no se borra del modelo.
+
+**Neon.** En producción la base está en el plan gratuito de Neon. El pipeline usa la URL directa, sin `-pooler` en el host, porque el advisory lock necesita una sesión propia. La URL lleva `sslmode=verify-full`. Límites del plan gratuito, según la [documentación de Neon](https://neon.com/docs/introduction/plans) y sus [preguntas frecuentes](https://neon.com/faqs/free-plan-limits-and-quotas), consultadas el 27/11/2026:
+
+- 1 GB de almacenamiento por proyecto.
+- 100 CU-horas de cómputo por proyecto y por mes.
+- La base se suspende tras 5 minutos sin uso, no se puede desactivar y tarda unos segundos en despertar.
+- Si se agota el cómputo, la base queda suspendida hasta el mes siguiente. Si se llena el almacenamiento, fallan las escrituras. En ningún caso se borran datos.
+
+Con las tres series, la base ocupa unos pocos MB, y una corrida diaria dura segundos.
 
 ## Arquitectura
 
@@ -135,7 +176,7 @@ El proyecto empezó como un observatorio de datos públicos de Córdoba. Al veri
 | Milestone | Contenido | Estado |
 |---|---|---|
 | M1 Ingesta | Verificación de APIs, descarga con copia cruda y chequeo de frescura | Hecho |
-| M2 Base y carga | Esquema, series mensuales, cálculo de la simulación y carga idempotente | Pendiente |
+| M2 Base y carga | Esquema, series mensuales, cálculo de la simulación y carga idempotente | Hecho |
 | M3 API | Simulación, series, comparativa, indicadores y frescura | Pendiente |
 | M4 Dashboard | Calculadora, series y tabla con CSV | Pendiente |
 | M5 Automatización y despliegue | Workflow diario, despliegue y Docker Compose | Pendiente |
@@ -144,17 +185,23 @@ Las tareas están en las [issues](https://github.com/nicote0/inflacion-vs-ahorro
 
 ## Cómo correrlo
 
-Requisito: Node.js 20 o superior. La ingesta no usa dependencias externas ni credenciales.
+Requisitos: Node.js 20 o superior, y Docker para la base local.
 
 ```bash
-cd pipeline
-npm test          # tests
-npm run ingesta   # descarga las fuentes y calcula la frescura
+npm install                          # en la raíz (npm workspaces: pipeline y simulacion)
+cp .env.example .env                 # completar usuario, contraseña, base y las dos URLs
+docker compose up -d                 # Postgres 17 local, con una base de desarrollo y una de tests
+npm test                             # tests unitarios, sin red ni base
+npm run test:db -w pipeline          # tests de integración contra la base de tests
+npm run pipeline -w pipeline         # descarga, carga en la base de DATABASE_URL y registra la ejecución
+npm run simular -w pipeline -- --desde 2020-01 --hasta 2025-01 --monto 100000
 ```
 
-La ingesta guarda las copias crudas en `data/raw/`, con un manifiesto de fechas y hashes, y el estado de cada fuente en `data/frescura.json`. La carpeta `data/` no se sube al repo. Si una copia no cambió desde la descarga anterior, no se duplica. Si alguna fuente falla, el proceso termina con código 1.
-
-Las partes siguientes (base de datos, API y dashboard) se agregan en los próximos milestones. Las credenciales se van a configurar con variables de entorno, y el repo va a incluir un `.env.example` con los nombres de las variables, sin valores.
+- **Base local o Neon:** `DATABASE_URL` puede apuntar al Postgres de Docker (`postgres://USUARIO:CLAVE@localhost:5432/BASE`) o a Neon. `TEST_DATABASE_URL` apunta a la base de tests local, que se crea sola con el sufijo `_test`. Los tests de integración borran y recrean su esquema, así que nunca hay que apuntarla a la base real. Si falta, `test:db` falla con un aviso; no se saltean en silencio.
+- **`npm run simular`:** muestra las tres opciones y la evolución mes a mes. Con `--csv carpeta` exporta los insumos y cada renovación del plazo fijo.
+- **`npm run ingesta -w pipeline`:** sigue funcionando sin base. Solo descarga, guarda las copias crudas en `data/raw/` con su manifiesto y escribe el estado de cada fuente en `data/frescura.json`.
+- **Qué no se sube:** la carpeta `data/` y el `.env`.
+- **Código de salida:** si alguna fuente falla, el proceso termina con 1.
 
 ## Licencia
 

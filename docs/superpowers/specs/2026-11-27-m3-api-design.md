@@ -1,6 +1,6 @@
 # Diseño: M3 API
 
-Fecha: 2026-11-27. Estado: borrador para aprobar.
+Fecha: 2026-11-27. Estado: aprobado por Nico el 2026-11-27.
 
 Diseño general: `docs/superpowers/specs/2026-11-25-inflacion-vs-ahorro-design.md` (sección Arquitectura, punto 4). Base de datos: `docs/superpowers/specs/2026-11-26-m2-base-y-carga-design.md`. Issues: #31, #32, #33, #34, #35 y #47.
 

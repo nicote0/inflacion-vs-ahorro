@@ -23,4 +23,4 @@ const obtenerFoto = crearCargadorDeFoto({
 });
 
 app = await crearApp({ obtenerFoto, origenesCors, logger: true });
-await app.listen({ port: Number(process.env.PORT ?? 3000), host: '127.0.0.1' });
+await app.listen({ port: Number(process.env.PORT ?? 3000), host: process.env.HOST ?? '127.0.0.1' });

@@ -44,6 +44,25 @@ test('las anotaciones van en la franja de arriba, sin pisar las líneas ni entre
   }
 });
 
+test('en ancho de celular se dibuja al ancho real y las anotaciones pasan a una lista numerada', () => {
+  const { container } = render(
+    <GraficoLineas
+      ancho={360}
+      meses={['2023-11', '2023-12', '2024-01']}
+      series={[{ id: 'dolar', nombre: 'Dólar oficial', color: '#24493A', valores: [100, 180, 170] }]}
+      anotaciones={[{ mes: '2023-12', serie: 'dolar', lineas: ['Dic 2023: el dólar oficial', 'sube 85 % en un mes'] }]}
+      formatoValor={(v) => `$${v}`}
+    />,
+  );
+  expect(container.querySelector('svg').getAttribute('viewBox')).toBe('0 0 360 380');
+  const lista = screen.getByRole('list', { name: 'Qué pasó' });
+  expect(lista).toHaveTextContent('Dic 2023: el dólar oficial sube 85 % en un mes');
+  expect(container.querySelector('.grafico__marca text')).toHaveTextContent('1');
+  // Las letras del SVG quedan del mismo tamaño en pantalla: el viewBox mide lo mismo que el gráfico.
+  const valorFinal = screen.getByText('$170');
+  expect(Number(valorFinal.getAttribute('x'))).toBeLessThan(360);
+});
+
 test('GraficoLineas dibuja una línea por serie, las anotaciones y el valor final', () => {
   const { container } = render(
     <GraficoLineas

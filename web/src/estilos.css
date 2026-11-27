@@ -100,6 +100,9 @@ h1, h2, p { margin: 0; }
 .grafico__notas circle { fill: var(--tinta); }
 .grafico__notas text { font-family: var(--sans); font-style: italic; font-size: 14px; fill: var(--tinta); }
 .grafico__finales text { font-family: var(--sans); font-size: 14px; font-weight: 700; }
+.grafico__marca circle { fill: var(--tinta); stroke: var(--fondo); stroke-width: 2; }
+.grafico__marca text { fill: var(--fondo); font-family: var(--sans); font-size: 12px; font-weight: 700; }
+.grafico__lista { margin: 12px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-style: italic; color: var(--texto-2); }
 .grafico__cursor { stroke: var(--texto-3); stroke-width: 1; stroke-dasharray: 3 3; }
 .grafico__tooltip { position: absolute; top: 34%; transform: translateX(-50%); background: #FFFFFF; border: 1px solid var(--linea); border-radius: 8px; padding: 8px 12px; font-size: 13px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; white-space: nowrap; }
 .grafico__tooltip i { display: inline-block; width: 10px; height: 3px; margin-right: 6px; vertical-align: middle; }

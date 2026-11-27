@@ -1,6 +1,6 @@
 # Diseño: M4 Dashboard
 
-Fecha: 2026-11-27. Estado: borrador para aprobar.
+Fecha: 2026-11-27. Estado: aprobado por Nico el 2026-11-27 ("De dónde salen los datos" queda como desplegable).
 
 Diseño general: `docs/superpowers/specs/2026-11-25-inflacion-vs-ahorro-design.md`. API que consume: `docs/superpowers/specs/2026-11-27-m3-api-design.md`. Issues: #48 (calculadora), #36 (series), #37 (estado de los datos) y #38 (tabla y CSV).
 

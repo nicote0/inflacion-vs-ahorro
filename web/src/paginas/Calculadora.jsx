@@ -177,7 +177,6 @@ export function Calculadora({ api, retraso = 400 }) {
 
       {resultado && (
         <div className={cargando ? 'resultado resultado--cargando' : 'resultado'} aria-busy={cargando}>
-          <p className="secundario">La parte lavada de cada billete es el poder de compra que se perdió.</p>
           <section className="opciones" aria-label="Lo que quedó de cada opción">
             {opciones.map((o) => (
               <article key={o.clave} className={resaltada && resaltada !== o.clave ? 'opcion opcion--apagada' : 'opcion'}

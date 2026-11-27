@@ -65,9 +65,7 @@ h1, h2, p { margin: 0; }
 .billete-inicial figcaption { font-size: 15px; color: var(--texto-2); }
 
 /* Resultado */
-.resultado { display: flex; flex-direction: column; gap: 40px; transition: opacity 0.2s; }
-.resultado > .secundario:first-child { margin-bottom: -28px; }
-.resultado--cargando { opacity: 0.55; }
+.resultado { display: flex; flex-direction: column; gap: 40px; transition: opacity 0.2s; }.resultado--cargando { opacity: 0.55; }
 .veredicto { border-top: 1px solid var(--linea); padding-top: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px 56px; align-items: end; }
 .veredicto h1 { font-weight: 600; font-size: clamp(36px, 5vw, 64px); line-height: 1.04; letter-spacing: -0.025em; }
 .veredicto p { font-size: 18px; }

@@ -1,0 +1,52 @@
+# Pipeline diario: descarga las series, las carga en Neon y registra la ejecución.
+name: Pipeline diario
+
+on:
+  schedule:
+    - cron: '0 13 * * *'   # todos los días a las 10:00 de Argentina
+    - cron: '0 14 1 * *'   # el 1.º de cada mes: mantener el cron activo
+  workflow_dispatch:
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 13 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Descargar, cargar y registrar
+        run: npm run pipeline -w pipeline
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Guardar las copias crudas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: copias-crudas-${{ github.run_id }}
+          path: |
+            data/raw
+            data/frescura.json
+          retention-days: 30
+          if-no-files-found: warn
+
+  # GitHub apaga los workflows programados tras 60 días sin actividad en el repo.
+  # Volver a habilitarlo una vez por mes reinicia ese contador.
+  mantener-activo:
+    if: github.event.schedule == '0 14 1 * *'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Volver a habilitar el workflow
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/pipeline.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}

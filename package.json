@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "pipeline",
-    "simulacion"
+    "simulacion",
+    "api"
   ],
   "scripts": {
     "test": "npm test --workspaces"

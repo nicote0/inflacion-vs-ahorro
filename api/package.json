@@ -1,0 +1,22 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API de solo lectura de inflacion-vs-ahorro",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@fastify/cors": "^11.4.3",
+    "@fastify/swagger": "^9.9.5",
+    "@fastify/swagger-ui": "^6.1.5",
+    "fastify": "^5.12.8",
+    "pg": "^8.23.1",
+    "simulacion": "*"
+  }
+}

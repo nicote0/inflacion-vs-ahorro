@@ -4,6 +4,8 @@
 import { ErrorApi } from '../errores.js';
 import { ERROR, MES, exigirRangoOrdenado, indicadorPorId } from '../foto.js';
 
+const MESES_MAXIMOS = 600;
+
 function mesSiguiente(mes) {
   const [a, m] = mes.split('-').map(Number);
   return m === 12 ? `${a + 1}-01` : `${a}-${String(m + 1).padStart(2, '0')}`;
@@ -82,6 +84,12 @@ export default async function rutasComparativa(app) {
       return indicador;
     });
 
+    // Tope para que un pedido absurdo (año 1000 a 9999) no genere megas de respuesta.
+    const [aDesde, mDesde] = desde.split('-').map(Number);
+    const [aHasta, mHasta] = hasta.split('-').map(Number);
+    if ((aHasta - aDesde) * 12 + (mHasta - mDesde) + 1 > MESES_MAXIMOS) {
+      throw new ErrorApi(400, 'PARAMETRO_INVALIDO', 'El período de la comparativa no puede superar 50 años.');
+    }
     const meses = mesesEntre(desde, hasta);
     const calcular = medida === 'nivel' ? nivelMensual : variacionMensual;
     const series = indicadores.map((i) => ({

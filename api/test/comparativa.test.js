@@ -67,3 +67,10 @@ test('errores de /comparativa', async () => {
     assert.equal(r.json().error.codigo, codigo, url);
   }
 });
+
+test('un período de más de 50 años da 400 PARAMETRO_INVALIDO', async () => {
+  const r = await pedir('/comparativa?indicadores=ipc_nacional,dolar_minorista&desde=1000-01&hasta=9999-12');
+  assert.equal(r.statusCode, 400);
+  assert.equal(r.json().error.codigo, 'PARAMETRO_INVALIDO');
+  assert.match(r.json().error.mensaje, /50 años/);
+});

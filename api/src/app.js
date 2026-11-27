@@ -17,6 +17,9 @@ export async function crearApp({ obtenerFoto, origenesCors = [], registrarRutasE
   const app = Fastify({
     logger,
     ajv: { customOptions: { removeAdditional: false, coerceTypes: true } },
+    // Errores que Fastify detecta antes de llegar a una ruta (por ejemplo, una URL mal codificada).
+    frameworkErrors: (err, req, reply) => reply.status(400).header('cache-control', 'no-store')
+      .send({ error: { codigo: 'PARAMETRO_INVALIDO', mensaje: 'La URL del pedido no es válida.' } }),
   });
 
   app.decorate('obtenerFoto', obtenerFoto);

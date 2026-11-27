@@ -90,3 +90,11 @@ test('/docs/json devuelve el documento OpenAPI', async () => {
   assert.equal(r.statusCode, 200);
   assert.match(r.json().openapi, /^3\./);
 });
+
+test('una URL mal codificada da 400 con el formato común', async () => {
+  const app = await conRutasExtra();
+  const r = await app.inject('/series/%E0%A4%A');
+  assert.equal(r.statusCode, 400);
+  assert.equal(r.json().error.codigo, 'PARAMETRO_INVALIDO');
+  assert.equal(r.headers['cache-control'], 'no-store');
+});

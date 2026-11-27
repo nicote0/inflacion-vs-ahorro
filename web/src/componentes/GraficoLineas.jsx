@@ -23,7 +23,9 @@ export function techoLindo(v) {
 
 export function GraficoLineas({
   meses, series, anotaciones = [], inflacionPorAnio = [], formatoEje = (v) => String(v), formatoValor = (v) => String(v), descripcion,
+  resaltada = null,
 }) {
+  const claseLinea = (id) => (resaltada && resaltada !== id ? 'linea linea--apagada' : 'linea');
   const [indice, setIndice] = useState(null);
   const Y_TOPE = anotaciones.length ? Y_TOPE_CON_NOTAS : Y_TOPE_SIN_NOTAS;
   const todos = series.flatMap((s) => s.valores).filter((v) => v != null);
@@ -109,7 +111,7 @@ export function GraficoLineas({
           })}
         </g>
         {series.map((s) => (
-          <path key={s.id} className="linea" d={camino(s.valores)} fill="none" stroke={s.color} strokeWidth="2.5"
+          <path key={s.id} className={claseLinea(s.id)} d={camino(s.valores)} fill="none" stroke={s.color} strokeWidth="2.5"
             strokeDasharray={s.punteada ? '6 5' : undefined} strokeLinejoin="round" />
         ))}
         <g className="grafico__notas">
@@ -128,7 +130,8 @@ export function GraficoLineas({
           {series.map((s) => {
             const ultimo = s.valores.findLastIndex((v) => v != null);
             return ultimo < 0 ? null : (
-              <text key={s.id} x={x(ultimo) + 8} y={y(s.valores[ultimo]) + 5} fill={s.colorTexto ?? s.color}>{formatoValor(s.valores[ultimo])}</text>
+              <text key={s.id} className={resaltada && resaltada !== s.id ? 'final--apagado' : undefined}
+                x={x(ultimo) + 8} y={y(s.valores[ultimo]) + 5} fill={s.colorTexto ?? s.color}>{formatoValor(s.valores[ultimo])}</text>
             );
           })}
         </g>

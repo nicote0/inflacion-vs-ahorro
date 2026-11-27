@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Billete } from '../componentes/Billete.jsx';
+import { useNumeroAnimado } from '../componentes/useNumeroAnimado.js';
 import { GraficoLineas } from '../componentes/GraficoLineas.jsx';
 import { anotacionesEn, inflacionAnual } from '../logica/anotaciones.js';
 import { escribirConsulta, leerConsulta, leerMonto } from '../logica/consulta.js';
@@ -20,6 +21,29 @@ const DETALLE = {
   plazoFijo: 'Renovado cada 30 días con la tasa de depósitos a 30 días.',
   pesosQuietos: 'El mismo monto guardado, sin invertir.',
 };
+
+// Monto que "cuenta" hasta el valor nuevo cuando cambia la consulta.
+function Monto({ valor }) {
+  return pesos(useNumeroAnimado(valor));
+}
+
+// El billete grande se inclina un poco siguiendo el mouse, como un billete mirado a contraluz.
+function BilleteInclinable({ children }) {
+  const [giro, setGiro] = useState({ x: 0, y: 0 });
+  const mover = (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const caja = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - caja.left) / caja.width - 0.5;
+    const py = (e.clientY - caja.top) / caja.height - 0.5;
+    setGiro({ x: -py * 8, y: px * 10 });
+  };
+  return (
+    <div className="inclinable" onPointerMove={mover} onPointerLeave={() => setGiro({ x: 0, y: 0 })}
+      style={{ '--giro-x': `${giro.x}deg`, '--giro-y': `${giro.y}deg` }}>
+      {children}
+    </div>
+  );
+}
 
 const montoCompacto = (v) => {
   if (Math.abs(v) >= 1e6) return `$${numero(v / 1e6, 2)} M`;
@@ -41,6 +65,11 @@ export function Calculadora({ api, retraso = 400 }) {
   const [cargando, setCargando] = useState(true);
   const [ipc, setIpc] = useState([]);
   const [copiado, setCopiado] = useState(false);
+  const [resaltada, setResaltada] = useState(null);
+  const resaltar = (clave) => ({
+    onMouseEnter: () => setResaltada(clave),
+    onMouseLeave: () => setResaltada(null),
+  });
   const ultimoPedido = useRef(0);
   const primeraConsulta = useRef(true);
 
@@ -139,7 +168,9 @@ export function Calculadora({ api, retraso = 400 }) {
 
       {consulta && consulta.monto != null && (
         <figure className="billete-inicial">
-          <Billete monto={consulta.monto} mes={consulta.desde} colores={COLORES_INICIAL} />
+          <BilleteInclinable>
+            <Billete monto={consulta.monto} mes={consulta.desde} colores={COLORES_INICIAL} />
+          </BilleteInclinable>
           <figcaption>Tus {pesos(consulta.monto)} de {nombreMes(consulta.desde, { largo: true })}, enteros. Más abajo, lo que quedó de ellos según dónde los pusiste.</figcaption>
         </figure>
       )}
@@ -149,15 +180,16 @@ export function Calculadora({ api, retraso = 400 }) {
           <p className="secundario">La parte lavada de cada billete es el poder de compra que se perdió.</p>
           <section className="opciones" aria-label="Lo que quedó de cada opción">
             {opciones.map((o) => (
-              <article key={o.clave} className="opcion" aria-label={o.nombre}>
+              <article key={o.clave} className={resaltada && resaltada !== o.clave ? 'opcion opcion--apagada' : 'opcion'}
+                aria-label={o.nombre} {...resaltar(o.clave)}>
                 <span className="opcion__puesto">{o.puesto}</span>
                 <Billete monto={o.valorFinalNominal} mes={consulta.hasta} perdido={o.perdido}
                   ganoPct={o.gano ? o.resultadoRealPct : null} colores={COLORES[o.clave]} />
                 <h2>{o.nombre}</h2>
                 <p className="secundario">{DETALLE[o.clave]}</p>
                 <dl>
-                  <dt>Tenés hoy</dt><dd className="cifra cifra--grande">{pesos(o.valorFinalNominal)}</dd>
-                  <dt>Vale en {consulta.desde.slice(0, 4)}</dt><dd className="cifra">{pesos(o.valorReal)}</dd>
+                  <dt>Tenés hoy</dt><dd className="cifra cifra--grande"><Monto valor={o.valorFinalNominal} /></dd>
+                  <dt>Vale en {consulta.desde.slice(0, 4)}</dt><dd className="cifra"><Monto valor={o.valorReal} /></dd>
                 </dl>
                 <p className={o.gano ? 'resultado-texto resultado-texto--gano' : 'resultado-texto'}>
                   {o.gano ? `Le ganó ${porcentaje(o.resultadoRealPct)} a la inflación` : `Perdió ${porcentaje(o.resultadoRealPct)} contra la inflación`}
@@ -182,9 +214,9 @@ export function Calculadora({ api, retraso = 400 }) {
                 <p className="secundario">Cuánto valían tus {pesos(consulta.monto)} cada mes, en pesos de {nombreMes(consulta.hasta, { largo: true })}.</p>
               </div>
               <ul className="leyenda" aria-label="Referencias">
-                <li><i style={{ background: COLORES.dolar.linea }} aria-hidden="true" />Dólar oficial</li>
-                <li><i style={{ background: COLORES.plazoFijo.linea }} aria-hidden="true" />Plazo fijo</li>
-                <li><i className="punteada" style={{ borderColor: COLORES.pesosQuietos.linea }} aria-hidden="true" />Pesos quietos</li>
+                <li {...resaltar('dolar')}><i style={{ background: COLORES.dolar.linea }} aria-hidden="true" />Dólar oficial</li>
+                <li {...resaltar('plazoFijo')}><i style={{ background: COLORES.plazoFijo.linea }} aria-hidden="true" />Plazo fijo</li>
+                <li {...resaltar('pesosQuietos')}><i className="punteada" style={{ borderColor: COLORES.pesosQuietos.linea }} aria-hidden="true" />Pesos quietos</li>
               </ul>
             </div>
             <GraficoLineas
@@ -198,6 +230,7 @@ export function Calculadora({ api, retraso = 400 }) {
               inflacionPorAnio={inflacionAnual(ipc, consulta.desde, consulta.hasta)}
               formatoEje={montoCompacto}
               formatoValor={montoCompacto}
+              resaltada={resaltada}
               descripcion={`Evolución mes a mes de las tres opciones entre ${nombreMes(consulta.desde, { largo: true })} y ${nombreMes(consulta.hasta, { largo: true })}, en pesos del mes final.`}
             />
           </section>

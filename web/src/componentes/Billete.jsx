@@ -3,6 +3,7 @@
 // dice "INFLACIÓN VS AHORRO" y "MUESTRA SIN VALOR" para que nunca pase por un billete.
 import { useId } from 'react';
 import { mesEnMayusculas, pesos, porcentaje } from '../logica/formato.js';
+import { useNumeroAnimado } from './useNumeroAnimado.js';
 
 const ANCHO = 460;
 const ALTO = 200;
@@ -31,6 +32,7 @@ export function Billete({ monto, mes, perdido = 0, ganoPct = null, colores }) {
   const { fondo, tinta, acento } = colores;
   const idPatron = `rayas-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const texto = pesos(monto);
+  const textoMostrado = pesos(useNumeroAnimado(monto));
   const lavado = ganoPct == null ? perdido : 0;
   const xLavado = ANCHO * (1 - lavado / 100);
   const fecha = mesEnMayusculas(mes);
@@ -76,8 +78,8 @@ export function Billete({ monto, mes, perdido = 0, ganoPct = null, colores }) {
       </g>
 
       {lavado > 0 && (
-        <g>
-          <rect x={xLavado} width={ANCHO - xLavado} height={ALTO} fill="#EEF0EA" fillOpacity="0.82" />
+        <g className="billete__lavado" key={`${monto}-${lavado}`}>
+          <rect className="billete__velo" x={xLavado} width={ANCHO - xLavado} height={ALTO} fill="#EEF0EA" fillOpacity="0.82" />
           <rect x={xLavado} width={ANCHO - xLavado} height={ALTO} fill={`url(#${idPatron})`} />
           <line x1={xLavado} y1="0" x2={xLavado} y2={ALTO} stroke="#5A665F" strokeWidth="1.6" strokeDasharray="5 4" />
         </g>
@@ -89,8 +91,8 @@ export function Billete({ monto, mes, perdido = 0, ganoPct = null, colores }) {
         <text x="176" y="186" fontSize="7" letterSpacing="2.2" fillOpacity="0.75">{`MUESTRA SIN VALOR · ${fecha}`}</text>
       </g>
       <g fontFamily="'Bodoni Moda', serif" fontWeight="700" fontSize={tam} letterSpacing="-1">
-        <text x="174" y="134" fill={fondo} stroke={fondo} strokeWidth="6" strokeLinejoin="round" aria-hidden="true">{texto}</text>
-        <text x="174" y="134" fill={tinta}>{texto}</text>
+        <text x="174" y="134" fill={fondo} stroke={fondo} strokeWidth="6" strokeLinejoin="round" aria-hidden="true">{textoMostrado}</text>
+        <text x="174" y="134" fill={tinta}>{textoMostrado}</text>
       </g>
       {lavado > 0 && (
         <text x="448" y="182" textAnchor="end" fontFamily="Figtree, sans-serif" fontSize="12.5" fontWeight="700" fill="#2F3A34">

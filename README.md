@@ -4,27 +4,19 @@
 
 Este proyecto responde esa pregunta con datos oficiales del INDEC y del Banco Central, para el período y el monto que elijas. Incluye el recorrido completo de un producto de datos: ingesta automática, almacenamiento en PostgreSQL, API y un dashboard interactivo.
 
-> El sitio muestra lo que pasó con datos históricos. No es una recomendación de inversión.
+> El sitio muestra lo que pasó con datos históricos. Es un proyecto educativo: no es asesoramiento financiero ni una recomendación de inversión.
 
 ## Qué vas a poder hacer
 
-```
- Si en  [ ene 2020 ▾ ]  tenía  [ $ 100.000 ]
- y lo miro en  [ oct 2026 ▾ ]       [Último año] [Desde 2020] [Todo]
+La pantalla principal es una calculadora que se lee como una oración: *"Guardaste [$100.000] en [enero 2020] y los miraste en [enero 2025]"*.
 
- ┌──────────────────┬──────────────────┬──────────────────┐
- │ Plazo fijo       │ Dólar oficial    │ Pesos quietos    │
- │ valor final      │ valor final      │ valor final      │
- │ le ganó / perdió │ le ganó / perdió │ le ganó / perdió │
- └──────────────────┴──────────────────┴──────────────────┘
- [ Gráfico de las tres opciones mes a mes, en pesos de hoy ]
- Datos al día: INDEC <mes> · BCRA <fecha>
-```
+- **Tu monto como billete.** El monto aparece en un billete ilustrado. Debajo hay un billete por opción (dólar oficial, plazo fijo y pesos quietos) con lo que tenés hoy, y la parte del billete que se comió la inflación aparece desteñida. Con $100.000 de enero 2020 a enero 2025, al dólar le queda el 63 % del poder de compra, al plazo fijo el 51 % y a los pesos quietos el 4 %.
+- **El veredicto en texto.** Por ejemplo "Ninguna le ganó a la inflación", con cuánto se multiplicaron los precios.
+- **Cómo fue cayendo.** Un gráfico mes a mes, en pesos del mes final, con anotaciones de lo que pasó (la inflación de 95 % en 2022, la devaluación de diciembre de 2023, la baja de tasas de 2024).
+- **Atajos y links.** Atajos de período (último año, desde 2020, todo) y la consulta guardada en el link para compartirla.
+- **Series y datos.** La vista **Series** muestra cada serie, o dos comparadas mes a mes, con la tabla de lo graficado y descarga en CSV. **Estado de los datos** muestra si cada fuente está al día.
 
-- Elegir mes inicial, mes final y monto, o usar un atajo de período.
-- Ver cuánto tendrías con cada opción y si le ganó o le perdió a la inflación.
-- Compartir la consulta con un link.
-- Explorar cada serie por separado y descargar los datos en CSV.
+Ver la sección [Dashboard](#dashboard).
 
 ## Fuentes de datos
 
@@ -164,6 +156,35 @@ Ejemplo de `/simulacion?desde=2020-01&hasta=2025-01&monto=100000` (recortado):
 
 **Conexión.** La API usa `DATABASE_URL_POOLED`, la URL de Neon con `-pooler`. Si no está definida, usa `DATABASE_URL`. CORS permite `localhost` y los orígenes de `CORS_ORIGENES`, una lista separada por comas.
 
+## Dashboard
+
+Front en React 19 con Vite (workspace `web/`), con tres vistas: **Calculadora** (`/`), **Series** (`/series`) y **Estado de los datos** (`/datos`). Consume la API: la URL sale de `VITE_API_URL`, que en desarrollo es `http://127.0.0.1:3000`.
+
+**Diseño.** Se buscó que no se viera como una plantilla:
+
+- Paleta salvia con un color por opción.
+- Tipografías Figtree, Bodoni Moda (para los montos de los billetes) y DM Mono (para las cifras).
+- Gráficos en SVG propio en vez de una librería: hacían falta piezas a medida, como el billete desteñido y las anotaciones de hechos.
+
+**El billete.** Es una ilustración inspirada en la serie argentina de animales (un hornero en un óvalo, un Sol de Mayo y tramas finas), pero no imita ningún billete real:
+
+- Dice "INFLACIÓN VS AHORRO" y "MUESTRA SIN VALOR".
+- No tiene número de serie, monto en letras, "República Argentina" ni el nombre del Banco Central.
+- Los montos que muestra no existen como billetes.
+
+**Interacción:**
+
+- La parte lavada avanza cuando llega un resultado y los montos "cuentan" hasta el valor nuevo.
+- Al pasar el mouse por un billete, se levanta y resalta su línea en el gráfico.
+- El billete grande se inclina siguiendo el mouse.
+- Todo se desactiva si el sistema pide reducir movimiento.
+
+**Celular.** El gráfico se dibuja al ancho real de la pantalla para que las letras sigan legibles. Por debajo de 600 px, las anotaciones pasan a marcas numeradas con una lista. Los billetes y las tarjetas se apilan y la tabla se desplaza dentro de su caja.
+
+**Accesibilidad.** Ganó o perdió siempre se dice en texto, no solo con color. Los billetes y gráficos tienen una descripción para lectores de pantalla. Los botones miden 44 px o más.
+
+**Aviso legal.** Todas las vistas aclaran que es un proyecto educativo, que no es asesoramiento financiero ni recomendación de inversión, y que conviene consultar a un asesor registrado en la CNV.
+
 ## Arquitectura
 
 ```
@@ -217,7 +238,7 @@ El proyecto empezó como un observatorio de datos públicos de Córdoba. Al veri
 
 - Ingesta, transformación y API: Node.js
 - Base de datos: PostgreSQL en Neon
-- Dashboard: React con gráficos
+- Dashboard: React 19 con Vite, React Router y gráficos en SVG propio
 - Automatización: GitHub Actions
 - Desarrollo local: Docker Compose
 
@@ -228,7 +249,7 @@ El proyecto empezó como un observatorio de datos públicos de Córdoba. Al veri
 | M1 Ingesta | Verificación de APIs, descarga con copia cruda y chequeo de frescura | Hecho |
 | M2 Base y carga | Esquema, series mensuales, cálculo de la simulación y carga idempotente | Hecho |
 | M3 API | Simulación, series, comparativa, indicadores y frescura | Hecho |
-| M4 Dashboard | Calculadora, series y tabla con CSV | Pendiente |
+| M4 Dashboard | Calculadora, series y tabla con CSV | Hecho |
 | M5 Automatización y despliegue | Workflow diario, despliegue y Docker Compose | Pendiente |
 
 Las tareas están en las [issues](https://github.com/nicote0/inflacion-vs-ahorro/issues) y los [milestones](https://github.com/nicote0/inflacion-vs-ahorro/milestones).
@@ -238,7 +259,7 @@ Las tareas están en las [issues](https://github.com/nicote0/inflacion-vs-ahorro
 Requisitos: Node.js 20 o superior, y Docker para la base local.
 
 ```bash
-npm install                          # en la raíz (npm workspaces: pipeline, simulacion y api)
+npm install                          # en la raíz (npm workspaces: pipeline, simulacion, api y web)
 cp .env.example .env                 # completar usuario, contraseña, base y las dos URLs
 docker compose up -d                 # Postgres 17 local, con una base de desarrollo y una de tests
 npm test                             # tests unitarios, sin red ni base
@@ -247,6 +268,8 @@ npm run pipeline -w pipeline         # descarga, carga en la base de DATABASE_UR
 npm run simular -w pipeline -- --desde 2020-01 --hasta 2025-01 --monto 100000
 npm run test:db -w api               # integración de la API contra la base de tests
 npm run api -w api                   # API en http://127.0.0.1:3000 (documentación en /docs)
+npm run dev -w web                   # dashboard en http://localhost:5173 (con la API corriendo)
+npm run build -w web                 # build estático del dashboard en web/dist
 ```
 
 - **Base local o Neon:** `DATABASE_URL` puede apuntar al Postgres de Docker (`postgres://USUARIO:CLAVE@localhost:5432/BASE`) o a Neon. `TEST_DATABASE_URL` apunta a la base de tests local, que se crea sola con el sufijo `_test`. Los tests de integración borran y recrean su esquema, así que nunca hay que apuntarla a la base real. Si falta, `test:db` falla con un aviso; no se saltean en silencio.

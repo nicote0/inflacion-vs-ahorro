@@ -1,4 +1,28 @@
-# Postgres local para desarrollo y tests. Producción usa Neon.
+# Todo el proyecto en local con un comando: `docker compose up -d`.
+# - postgres: base de desarrollo (y la de tests, con sufijo _test).
+# - instalar: corre `npm ci` una vez en un volumen propio de node_modules (los binarios de Vite
+#   instalados en Windows o macOS no sirven dentro de Linux).
+# - api: http://localhost:3000 (documentación en /docs).
+# - web: http://localhost:5173.
+# - pipeline: carga los datos en la base local con `docker compose run --rm pipeline`.
+# Producción usa Neon y Vercel; esto es solo para desarrollo.
+
+x-node: &node
+  image: node:24-alpine
+  working_dir: /app
+  volumes:
+    - .:/app
+    - node_modules:/app/node_modules
+    - node_modules_pipeline:/app/pipeline/node_modules
+    - node_modules_api:/app/api/node_modules
+    - node_modules_web:/app/web/node_modules
+    - node_modules_simulacion:/app/simulacion/node_modules
+
+x-base-local: &base-local
+  # El environment le gana al .env montado (node --env-file no pisa variables ya definidas).
+  DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  DATABASE_URL_POOLED: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+
 services:
   postgres:
     image: postgres:17
@@ -11,6 +35,54 @@ services:
     volumes:
       - datos-postgres:/var/lib/postgresql/data
       - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      retries: 20
+
+  instalar:
+    <<: *node
+    command: npm ci --no-audit --no-fund
+
+  api:
+    <<: *node
+    command: npm run api -w api
+    environment:
+      <<: *base-local
+      HOST: 0.0.0.0
+    ports:
+      - "3000:3000"
+    depends_on:
+      instalar:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
+  web:
+    <<: *node
+    command: npm run dev -w web -- --host 0.0.0.0 --port 5173 --strictPort
+    environment:
+      VITE_API_URL: http://localhost:3000
+    ports:
+      - "5173:5173"
+    depends_on:
+      instalar:
+        condition: service_completed_successfully
+
+  pipeline:
+    <<: *node
+    profiles: [pipeline]
+    command: npm run pipeline -w pipeline
+    environment:
+      <<: *base-local
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   datos-postgres:
+  node_modules:
+  node_modules_pipeline:
+  node_modules_api:
+  node_modules_web:
+  node_modules_simulacion:

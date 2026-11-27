@@ -16,9 +16,24 @@ function Pie({ api }) {
   ));
   return (
     <footer className="pie">
-      <div className="contenedor pie__contenido">
-        <p>{partes.length ? `Datos hasta: ${partes.join(' · ')}` : 'Datos oficiales del INDEC y el BCRA.'}</p>
-        <p>Muestra lo que pasó, no lo que conviene. No es una recomendación de inversión.</p>
+      <div className="contenedor">
+        <section className="aviso-legal" aria-labelledby="aviso-legal">
+          <h2 id="aviso-legal">Aviso importante</h2>
+          <p>
+            Este sitio es un proyecto educativo. Muestra cómo les fue <strong>en el pasado</strong> a tres formas de ahorrar,
+            calculado con datos públicos del INDEC y del BCRA. <strong>No es asesoramiento financiero ni una recomendación
+            de inversión</strong>, y no tiene en cuenta tu situación personal.
+          </p>
+          <p>
+            Lo que pasó antes no garantiza lo que va a pasar. El cálculo simplifica la realidad: no incluye impuestos,
+            comisiones, el costo de comprar dólares ni otros tipos de cambio. Antes de invertir, consultá con un asesor
+            registrado en la Comisión Nacional de Valores (CNV).
+          </p>
+        </section>
+        <div className="pie__contenido">
+          <p>{partes.length ? `Datos hasta: ${partes.join(' · ')}` : 'Datos oficiales del INDEC y el BCRA.'}</p>
+          <p>Muestra lo que pasó, no lo que conviene.</p>
+        </div>
       </div>
     </footer>
   );

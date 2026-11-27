@@ -34,7 +34,7 @@ h1, h2, p { margin: 0; }
 .navegacion { display: flex; flex-wrap: wrap; gap: 4px; font-size: 15px; }
 .pie { border-top: 1px solid var(--linea); margin-top: 40px; }
 .pie__contenido { display: flex; flex-wrap: wrap; gap: 10px 40px; justify-content: space-between; padding-block: 20px 40px; font-size: 14px; color: var(--texto-2); }
-.principal { padding-block: 48px 0; }
+.principal { padding-block: 32px 0; }
 
 /* Botones píldora */
 .pildora { display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--borde-suave); background: transparent; cursor: pointer; text-decoration: none; font-size: 15px; }
@@ -42,8 +42,9 @@ h1, h2, p { margin: 0; }
 .pildora:disabled { opacity: 0.5; cursor: default; }
 
 /* Consulta */
-.calculadora { display: flex; flex-direction: column; gap: 48px; }
-.consulta { display: flex; flex-direction: column; gap: 20px; }
+/* Compacta arriba: al cambiar la consulta, el billete grande y los tres de abajo se ven en la misma pantalla. */
+.calculadora { display: flex; flex-direction: column; gap: 24px; }
+.consulta { display: flex; flex-direction: column; gap: 14px; }
 .consulta__oracion { font-size: clamp(24px, 3vw, 38px); line-height: 1.4; letter-spacing: -0.02em; max-width: 900px; }
 .campo { display: inline-flex; align-items: baseline; font-weight: 700; }
 .campo input, .campo select { border: 0; border-bottom: 2px solid var(--gano); background: transparent; font-weight: 700; padding: 0 2px; }
@@ -57,18 +58,19 @@ h1, h2, p { margin: 0; }
 
 /* Billetes */
 .billete { display: block; width: 100%; height: auto; }
-.billete-inicial { margin: 0; display: flex; flex-direction: column; gap: 14px; max-width: 880px; }
-.billete-inicial figcaption { font-size: 16px; color: var(--texto-2); max-width: 640px; }
+.billete-inicial { margin: 0; display: flex; flex-direction: column; gap: 8px; max-width: 540px; }
+.billete-inicial figcaption { font-size: 15px; color: var(--texto-2); }
 
 /* Resultado */
-.resultado { display: flex; flex-direction: column; gap: 48px; transition: opacity 0.2s; }
+.resultado { display: flex; flex-direction: column; gap: 40px; transition: opacity 0.2s; }
+.resultado > .secundario:first-child { margin-bottom: -28px; }
 .resultado--cargando { opacity: 0.55; }
 .veredicto { border-top: 1px solid var(--linea); padding-top: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px 56px; align-items: end; }
 .veredicto h1 { font-weight: 600; font-size: clamp(36px, 5vw, 64px); line-height: 1.04; letter-spacing: -0.025em; }
 .veredicto p { font-size: 18px; }
 .veredicto .secundario { font-size: 15px; margin-top: 8px; }
-.opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 40px 28px; }
-.opcion { display: flex; flex-direction: column; gap: 12px; }
+.opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 32px 24px; }
+.opcion { display: flex; flex-direction: column; gap: 10px; }
 .opcion__puesto { font-family: var(--mono); font-size: 13px; color: var(--texto-3); }
 .opcion h2 { margin-top: 4px; font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
 .opcion dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-items: baseline; font-size: 15px; }

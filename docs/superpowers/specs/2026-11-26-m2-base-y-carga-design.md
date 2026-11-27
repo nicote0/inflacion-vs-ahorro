@@ -1,6 +1,6 @@
 # Diseño: M2 Base y carga
 
-Fecha: 2026-11-26. Estado: borrador para aprobar.
+Fecha: 2026-11-26. Estado: aprobado por Nico el 2026-11-27, con los ajustes de la sección "Ajustes de la revisión".
 
 Diseño general del proyecto: `docs/superpowers/specs/2026-11-25-inflacion-vs-ahorro-design.md`. Issues de M2: #25, #26, #28, #29, #30, #45 y #46.
 
@@ -127,7 +127,9 @@ Las reglas son las del diseño general (sección Cálculo). Estas son las precis
 - **Pesos de hoy:** la evolución expresa cada mes en pesos del mes final: `nominal(m) × IPC(hasta) / IPC(m)`. `valorReal` sigue la fórmula del diseño general (`valorFinalNominal / factor`). El resultado real en % da igual con las dos convenciones.
 - **Errores:** si `hasta` no es posterior a `desde`, si `monto` no es mayor que 0, o si falta un mes de IPC o de dólar o no hay tasa en el período, lanza un `ErrorSimulacion` con un código. La API de M3 lo convierte en un 400.
 
-Para verificarlo con datos reales sin esperar a la API: `npm run simular -- --desde 2020-01 --hasta 2025-01 --monto 100000` lee de la base y muestra el resultado. Para la planilla, el comando puede exportar a CSV los insumos y cada renovación del plazo fijo. Nico arma la planilla con eso y compara al menos dos períodos.
+Para verificarlo con datos reales sin esperar a la API: `npm run simular -- --desde 2020-01 --hasta 2025-01 --monto 100000` lee de la base y muestra el resultado. Para la planilla, el comando puede exportar a CSV los insumos y cada renovación del plazo fijo.
+
+**Planilla de verificación (decisión del 2026-11-27):** la arma Claude, con fórmulas visibles en cada celda, a partir del CSV exportado, para al menos dos períodos. Nico revisa que las fórmulas sigan las reglas de este documento. Es un control más débil que una planilla armada por otra persona, porque Claude interpreta las reglas en los dos lados. Para compensarlo, los tests unitarios de `simulacion` incluyen casos chicos con resultados calculados a mano y escritos en el test (por ejemplo, dos renovaciones con tasa fija y un IPC que se duplica), así cada regla queda expresada como un número que se puede comprobar con una calculadora.
 
 ## Organización del código
 
@@ -151,12 +153,19 @@ Nico crea el proyecto en el plan gratuito y guarda la `DATABASE_URL` en su `.env
 - `npm run pipeline` contra Neon, dos veces: la segunda da `sin_cambios` en las fuentes que no cambiaron, y los conteos de `hecho_diario` y `hecho_mensual` no se mueven.
 - Dos meses del promedio del dólar comparados a mano contra los datos diarios (#45).
 - Una ejecución con una fuente rota a propósito (por ejemplo, una variable inexistente en una copia de `fuentes.json`) queda registrada como error y las otras cargan (#30).
-- La simulación de dos períodos coincide con la planilla de Nico (#46).
+- La simulación de dos períodos coincide con la planilla de verificación, revisada por Nico (#46).
 - README: esquema, regla de faltantes, cómo correr con Docker y con Neon, y los límites de Neon.
 
 ## Para M5 (se anota en #39)
 
 En Actions, `data/raw` se pierde al terminar cada corrida. Para conservar las copias crudas hay que subirlas como artifact del workflow. La carga no depende de eso, porque compara el hash contra la base.
+
+## Ajustes de la revisión (2026-11-27)
+
+- **Conexión directa para el pipeline.** Los advisory locks de sesión no funcionan a través del pooler de Neon (PgBouncer en modo transacción). El pipeline usa la URL directa de Neon (`DATABASE_URL`), y la URL con pooling queda para la API de M3 (`DATABASE_URL_POOLED`, que se suma al `.env.example` en M3). El `.env.example` de M2 lo aclara con un comentario.
+- **Frescura con la base cuando falla la descarga.** Si una fuente no se puede descargar, la última observación se toma de la base (`max(fecha)` del hecho de ese indicador). Si la base no tiene datos de esa fuente, se usa la última copia cruda local, como en M1. Así, en Actions, una caída no hace aparecer la fuente como `sin_datos`.
+- **Base de tests separada.** El Postgres de Docker crea dos bases: la de desarrollo (`POSTGRES_DB`) y una de tests, con un script de inicialización montado en `docker-entrypoint-initdb.d`. `TEST_DATABASE_URL` apunta a la de tests, así los tests de integración pueden borrar y recrear el esquema sin tocar los datos de desarrollo.
+- **Costo cero.** Docker se usa solo en local. En producción: Neon, GitHub Actions y una función serverless, todo en planes gratuitos.
 
 ## Queda a criterio del implementador
 

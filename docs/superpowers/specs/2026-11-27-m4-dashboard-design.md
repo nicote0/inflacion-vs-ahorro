@@ -65,8 +65,8 @@ De arriba hacia abajo:
 1. **Encabezado:** logo (mini billete medio desteñido + "inflación vs ahorro") y navegación: Calculadora, Series, Estado de los datos.
 2. **Consulta como oración:** "Guardaste [$100.000] en [enero 2020] y los miraste en [enero 2025]." El monto es un campo numérico; los meses son selectores con el rango de la API (`rango.mesMinimo` a `rango.mesMaximo`). Debajo, los **atajos**: Último año, Desde 2020, Todo (desde dic 2016). El atajo activo se marca relleno.
 3. **Billete grande entero** con el monto ingresado y la fecha inicial. Leyenda: "Tus $X de <mes inicial>, enteros. Más abajo, lo que quedó de ellos según dónde los pusiste."
-4. **Veredicto** como titular, con el contexto: "Los precios se multiplicaron por F. Lo que en <mes inicial> costaba $X, en <mes final> costaba $X·F."
-5. **Tres billetes**, uno por opción, **ordenados de mejor a peor resultado**, con "1.º · el que menos perdió" (o "el que más ganó"), 2.º y 3.º. Cada uno: billete con el monto nominal de hoy y la fecha final, desteñido según lo perdido; nombre, cómo se calcula esa opción en una línea, "Tenés hoy" y "Vale en <año inicial>", y el resultado en texto.
+4. **Tres billetes** justo debajo del billete grande, uno por opción, **ordenados de mejor a peor resultado**, con "1.º · el que menos perdió" (o "el que más ganó"), 2.º y 3.º. Cada uno: billete con el monto nominal de hoy y la fecha final, desteñido según lo perdido; nombre, cómo se calcula esa opción en una línea, "Tenés hoy" y "Vale en <año inicial>", y el resultado en texto. (Orden pedido por Nico el 27/11/2026: primero los billetes, después el veredicto.)
+5. **Veredicto** como titular, con el contexto: "Los precios se multiplicaron por F. Lo que en <mes inicial> costaba $X, en <mes final> costaba $X·F."
 6. **Gráfico "Cómo fue cayendo"** (ver Gráficos).
 7. **Tres desplegables:** De dónde salen los datos, Cómo se calcula, Compartir esta consulta.
 8. **Pie:** hasta qué fecha llega cada fuente (de `datosHasta`) y "Muestra lo que pasó, no lo que conviene. No es una recomendación de inversión."

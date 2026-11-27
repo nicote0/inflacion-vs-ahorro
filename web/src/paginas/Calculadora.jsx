@@ -146,18 +146,7 @@ export function Calculadora({ api, retraso = 400 }) {
 
       {resultado && (
         <div className={cargando ? 'resultado resultado--cargando' : 'resultado'} aria-busy={cargando}>
-          <section className="veredicto" aria-labelledby="veredicto">
-            <h1 id="veredicto">{textoVeredicto(opciones)}</h1>
-            <div>
-              <p>
-                Los precios se multiplicaron por <strong className="cifra">{factor(resultado.factorInflacion)}</strong>.
-                Lo que en {nombreMes(consulta.desde, { largo: true })} costaba {pesos(consulta.monto)}, en{' '}
-                {nombreMes(consulta.hasta, { largo: true })} costaba <strong className="cifra">{pesos(consulta.monto * resultado.factorInflacion)}</strong>.
-              </p>
-              <p className="secundario">La parte lavada de cada billete es el poder de compra que se perdió.</p>
-            </div>
-          </section>
-
+          <p className="secundario">La parte lavada de cada billete es el poder de compra que se perdió.</p>
           <section className="opciones" aria-label="Lo que quedó de cada opción">
             {opciones.map((o) => (
               <article key={o.clave} className="opcion" aria-label={o.nombre}>
@@ -175,6 +164,15 @@ export function Calculadora({ api, retraso = 400 }) {
                 </p>
               </article>
             ))}
+          </section>
+
+          <section className="veredicto" aria-labelledby="veredicto">
+            <h1 id="veredicto">{textoVeredicto(opciones)}</h1>
+            <p>
+              Los precios se multiplicaron por <strong className="cifra">{factor(resultado.factorInflacion)}</strong>.
+              Lo que en {nombreMes(consulta.desde, { largo: true })} costaba {pesos(consulta.monto)}, en{' '}
+              {nombreMes(consulta.hasta, { largo: true })} costaba <strong className="cifra">{pesos(consulta.monto * resultado.factorInflacion)}</strong>.
+            </p>
           </section>
 
           <section className="caida" aria-labelledby="titulo-caida">

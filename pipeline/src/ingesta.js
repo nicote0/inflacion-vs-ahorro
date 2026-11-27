@@ -6,7 +6,7 @@ import { evaluarFrescura, fechaHoyArgentina } from './frescura.js';
 
 const ultimaFecha = (observaciones) => observaciones.at(-1)?.fecha ?? null;
 
-function armarFrescura(fuente, { ultimaObservacion, ultimaFechaDeclarada, hoy }) {
+export function armarFrescura(fuente, { ultimaObservacion, ultimaFechaDeclarada, hoy }) {
   return {
     ultimaObservacion,
     ultimaFechaDeclarada,
@@ -17,7 +17,7 @@ function armarFrescura(fuente, { ultimaObservacion, ultimaFechaDeclarada, hoy })
 
 // Si la fuente falló, la frescura se calcula con la última copia guardada (si hay),
 // para que una caída no oculte hasta cuándo había datos.
-async function ultimaObservacionGuardada(adaptador, fuente, dirBase) {
+export async function ultimaObservacionGuardada(adaptador, fuente, dirBase) {
   try {
     const previa = await leerUltimoCrudo({ dirBase, fuenteId: fuente.id });
     return previa ? ultimaFecha(adaptador.parsear(previa.contenido).observaciones) : null;

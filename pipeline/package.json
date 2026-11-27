@@ -10,7 +10,8 @@
   "scripts": {
     "test": "node --test",
     "ingesta": "node src/cli.js",
-    "test:db": "node --env-file-if-exists=../.env --test --test-concurrency=1 \"test-db/*.integracion.js\""
+    "test:db": "node --env-file-if-exists=../.env --test --test-concurrency=1 \"test-db/*.integracion.js\"",
+    "pipeline": "node --env-file-if-exists=../.env src/cli-pipeline.js"
   },
   "license": "MIT",
   "dependencies": {

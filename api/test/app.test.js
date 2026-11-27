@@ -84,6 +84,15 @@ test('CORS permite localhost y los orígenes configurados', async () => {
   assert.equal(r.headers['access-control-allow-origin'], undefined);
 });
 
+test('/docs devuelve la página de Swagger UI apuntando al documento', async () => {
+  const app = await conRutasExtra();
+  const r = await app.inject('/docs');
+  assert.equal(r.statusCode, 200);
+  assert.match(r.headers['content-type'], /text\/html/);
+  assert.match(r.body, /swagger-ui-dist@\d+\.\d+\.\d+/);
+  assert.match(r.body, /url: 'docs\/json'/);
+});
+
 test('/docs/json devuelve el documento OpenAPI', async () => {
   const app = await conRutasExtra();
   const r = await app.inject('/docs/json');

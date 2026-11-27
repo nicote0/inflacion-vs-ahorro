@@ -2,8 +2,8 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
-import swaggerUi from '@fastify/swagger-ui';
 import { manejarError, rutaInexistente } from './errores.js';
+import rutasDocumentacion from './rutas/documentacion.js';
 import rutasIndicadores from './rutas/indicadores.js';
 import rutasSeries from './rutas/series.js';
 import rutasComparativa from './rutas/comparativa.js';
@@ -44,7 +44,7 @@ export async function crearApp({ obtenerFoto, origenesCors = [], registrarRutasE
       },
     },
   });
-  await app.register(swaggerUi, { routePrefix: '/docs' });
+  await app.register(rutasDocumentacion);
 
   await app.register(rutasIndicadores);
   await app.register(rutasSeries);

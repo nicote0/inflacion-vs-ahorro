@@ -1,5 +1,10 @@
 # inflacion-vs-ahorro
 
+[![Pipeline diario](https://github.com/nicote0/inflacion-vs-ahorro/actions/workflows/pipeline.yml/badge.svg)](https://github.com/nicote0/inflacion-vs-ahorro/actions/workflows/pipeline.yml)
+[![Tests](https://github.com/nicote0/inflacion-vs-ahorro/actions/workflows/ci.yml/badge.svg)](https://github.com/nicote0/inflacion-vs-ahorro/actions/workflows/ci.yml)
+
+**Sitio:** https://inflacion-vs-ahorro.vercel.app · **API:** https://inflacion-vs-ahorro.vercel.app/api/indicadores · **Documentación de la API:** https://inflacion-vs-ahorro-api.vercel.app/api/docs
+
 **¿Qué le gana a la inflación?** Si en algún momento tenías pesos ahorrados, ¿te hubiera convenido un plazo fijo, comprar dólares o dejarlos quietos?
 
 Este proyecto responde esa pregunta con datos oficiales del INDEC y del Banco Central, para el período y el monto que elijas. Incluye el recorrido completo de un producto de datos: ingesta automática, almacenamiento en PostgreSQL, API y un dashboard interactivo.
@@ -28,7 +33,7 @@ Verificadas el 25/11/2026.
 | Tipo de cambio minorista, promedio vendedor | [API de estadísticas del BCRA](https://api.bcra.gob.ar/estadisticas/v4.0/monetarias) v4, variable 4 | Diaria (días hábiles) | 2010-06 | 2026-11-25 |
 | Tasa de depósitos a 30 días (TNA) | API de estadísticas del BCRA v4, variable 12 | Diaria (días hábiles) | 1985-08 | 2026-11-24 |
 
-El período comparable empieza en diciembre de 2016, primer mes del IPC nacional con esta base. Las fuentes se configuran en [`pipeline/fuentes.json`](pipeline/fuentes.json).
+El período comparable empieza en diciembre de 2016, primer mes del IPC nacional con esta base. Las fuentes se configuran en [`pipeline/fuentes.json`](pipeline/fuentes.json). El estado actual de cada fuente (último dato real, fecha declarada y si está al día) se ve en vivo en [Estado de los datos](https://inflacion-vs-ahorro.vercel.app/datos).
 
 ### Cómo responde cada API
 
@@ -188,38 +193,41 @@ Front en React 19 con Vite (workspace `web/`), con tres vistas: **Calculadora** 
 ## Arquitectura
 
 ```
- INDEC (datos.gob.ar)        BCRA
+ INDEC (datos.gob.ar)        BCRA (API v4)
           │                    │
           └─────────┬──────────┘
                     ▼
- ┌──────────────────────────────┐
- │ 1. Ingesta (Node.js)         │  copia cruda con fecha y hash SHA-256
- └──────────────┬───────────────┘
-                ▼
- ┌──────────────────────────────┐
- │ 2. Transformación y carga    │  tipos, series diarias a mensuales,
- │                              │  carga idempotente
- └──────────────┬───────────────┘
+ ┌────────────────────────────────────────────┐
+ │ GitHub Actions · todos los días 10:00 (AR) │
+ │  pipeline (Node.js): descarga, copia cruda │
+ │  con hash, staging → modelo, registro      │
+ └──────────────┬─────────────────────────────┘
                 ▼
  ┌──────────────────────────────────────────┐
- │ PostgreSQL (Neon)                        │
- │  staging:  datos tal cual llegan         │
- │  modelo:   dim_fecha, dim_indicador,     │
- │            hechos diarios y mensuales    │
- │  control:  ejecuciones y frescura        │
+ │ PostgreSQL en Neon (plan gratuito)       │
+ │  staging · modelo · control              │
  └──────────────┬───────────────────────────┘
                 ▼
- ┌──────────────────────────────┐
- │ 3. API (serverless)          │  /simulacion, /series, /comparativa,
- │                              │  /indicadores, /frescura
- └──────────────┬───────────────┘
-                ▼
- ┌──────────────────────────────┐
- │ 4. Dashboard (React)         │  calculadora, series, tabla y CSV
- └──────────────────────────────┘
+ ┌──────────────────────────────────────────┐
+ │ API Fastify · función de Vercel          │  foto de los datos en memoria
+ │  /simulacion /series /comparativa        │  1 hora + caché del CDN
+ │  /indicadores /frescura /docs            │
+ └──────────────┬───────────────────────────┘
+                ▼  (la web reenvía /api/* a la API: un solo dominio)
+ ┌──────────────────────────────────────────┐
+ │ Web React + Vite · sitio estático Vercel │  calculadora, series, estado
+ └──────────────────────────────────────────┘
 
- 5. GitHub Actions corre la ingesta y la carga todos los días.
+ Local: docker compose up (Postgres + API + web) y docker compose run --rm pipeline.
 ```
+
+- **Pipeline diario:** [`.github/workflows/pipeline.yml`](.github/workflows/pipeline.yml).
+  - Corre todos los días y también a mano, con la URL de Neon desde GitHub Secrets.
+  - Guarda las copias crudas como artifact por 30 días.
+  - Una vez por mes vuelve a habilitarse solo, para que GitHub no lo apague por inactividad.
+  - El [historial de ejecuciones](https://github.com/nicote0/inflacion-vs-ahorro/actions/workflows/pipeline.yml) muestra que corre solo.
+- **Tests:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) los corre en cada push.
+- **Despliegue:** dos proyectos de Vercel, uno con raíz `api/` y otro con raíz `web/`. Los dos se publican solos con cada push a `main`.
 
 ## Decisiones de diseño
 
@@ -233,6 +241,25 @@ Front en React 19 con Vite (workspace `web/`), con tres vistas: **Calculadora** 
 ### Cambio de rumbo
 
 El proyecto empezó como un observatorio de datos públicos de Córdoba. Al verificar las fuentes, el 25/11/2026, encontramos que las series cordobesas disponibles en portales abiertos no tenían datos nuevos (IPC de Córdoba hasta agosto de 2025, transporte urbano hasta abril de 2023) y que el portal provincial no respondía. Se pasó a fuentes nacionales que se actualizan solas y a una pregunta única.
+
+## Problemas encontrados y cómo se resolvieron
+
+- **Fuentes de Córdoba sin datos nuevos.** Se verificaron antes de programar y se cambió el rumbo del proyecto (ver arriba).
+- **API v3 del BCRA dada de baja.** Respondía 410. Se usa la v4.
+- **El BCRA devuelve como mucho 3000 filas por pedido.** La tasa a 30 días ya tiene más de 2400 desde 2016, así que la ingesta pagina por `offset` hasta completar el total que informa la API.
+- **Un 200 que no trae datos.** Si una API responde 200 con un HTML de error o un cuerpo vacío, la fuente se marca con error y esa respuesta no se guarda como copia cruda.
+- **El advisory lock no funciona con el pooler de Neon.** El pipeline usa la URL directa y la API, la URL con pooler.
+- **Verificar la simulación.** El cálculo se rehízo con fórmulas en dos planillas (`docs/verificacion/`), que coinciden al centavo con el programa.
+- **Respuestas fuera de orden en la calculadora.** Si el usuario cambia el período rápido, cada pedido lleva un número y solo se muestra la respuesta del último.
+- **Anotaciones del gráfico que se pisaban con las líneas, y gráfico ilegible en celular.**
+  - Las anotaciones tienen una franja propia arriba del gráfico.
+  - El gráfico se dibuja al ancho real de la pantalla.
+  - En celular, las anotaciones pasan a marcas numeradas.
+- **Una dependencia que rompía la función de Vercel.** `@fastify/swagger-ui` cargaba un módulo ESM con `require()`, y el cargador de Vercel no lo soporta. La página de documentación se reemplazó por una propia, que trae Swagger UI desde un CDN.
+- **Rutas de varios tramos en Vercel.** Un archivo de rutas dinámicas no tomaba `/series/x` y agregaba un parámetro extra. Se pasó a una sola función con un rewrite.
+- **El billete y el aviso legal.**
+  - El billete se diseñó para no imitar ningún billete real (ver Dashboard).
+  - El sitio aclara que no es asesoramiento financiero: en Argentina, el asesoramiento de inversión habitual lo regula la CNV.
 
 ## Stack
 
@@ -250,11 +277,32 @@ El proyecto empezó como un observatorio de datos públicos de Córdoba. Al veri
 | M2 Base y carga | Esquema, series mensuales, cálculo de la simulación y carga idempotente | Hecho |
 | M3 API | Simulación, series, comparativa, indicadores y frescura | Hecho |
 | M4 Dashboard | Calculadora, series y tabla con CSV | Hecho |
-| M5 Automatización y despliegue | Workflow diario, despliegue y Docker Compose | Pendiente |
+| M5 Automatización y despliegue | Workflow diario, despliegue y Docker Compose | Hecho |
 
 Las tareas están en las [issues](https://github.com/nicote0/inflacion-vs-ahorro/issues) y los [milestones](https://github.com/nicote0/inflacion-vs-ahorro/milestones).
 
 ## Cómo correrlo
+
+### Con Docker, todo de una
+
+```bash
+cp .env.example .env                 # completar POSTGRES_USER, POSTGRES_PASSWORD y POSTGRES_DB
+docker compose up -d                 # Postgres, API en http://localhost:3000 y web en http://localhost:5173
+docker compose run --rm pipeline     # descarga las fuentes y las carga en la base local
+```
+
+La primera vez, el servicio `instalar` corre `npm ci` dentro del contenedor. En Docker, la API y el pipeline usan la base del contenedor aunque el `.env` tenga otra `DATABASE_URL`.
+
+### En la nube
+
+- **Base:** un proyecto en el plan gratuito de Neon.
+- **Pipeline:** el secret `DATABASE_URL` (URL directa de Neon) en GitHub Actions.
+- **Vercel:** dos proyectos importados desde este repo.
+  - Raíz `api`, preset "Other", Install Command `cd .. && npm ci` y la variable `DATABASE_URL_POOLED` (URL de Neon con `-pooler`).
+  - Raíz `web`, preset Vite, mismo Install Command.
+- **Conexión entre los dos:** la web reenvía `/api/*` a la API con [`web/vercel.json`](web/vercel.json).
+
+### Con Node, paso a paso
 
 Requisitos: Node.js 20 o superior, y Docker para la base local.
 

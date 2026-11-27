@@ -63,6 +63,18 @@ test('en ancho de celular se dibuja al ancho real y las anotaciones pasan a una 
   expect(Number(valorFinal.getAttribute('x'))).toBeLessThan(360);
 });
 
+test('los valores finales de líneas que terminan cerca no se pisan', () => {
+  render(
+    <GraficoLineas ancho={360} meses={['2020-01', '2020-02']} formatoValor={(v) => `$${v}`}
+      series={[
+        { id: 'dolar', nombre: 'Dólar', color: '#000', valores: [100, 245] },
+        { id: 'plazoFijo', nombre: 'Plazo', color: '#00f', valores: [100, 231] },
+      ]} />,
+  );
+  const ys = ['$245', '$231'].map((t) => Number(screen.getByText(t).getAttribute('y')));
+  expect(Math.abs(ys[0] - ys[1])).toBeGreaterThanOrEqual(16);
+});
+
 test('GraficoLineas dibuja una línea por serie, las anotaciones y el valor final', () => {
   const { container } = render(
     <GraficoLineas

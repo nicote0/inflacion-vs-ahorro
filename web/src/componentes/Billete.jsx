@@ -88,19 +88,19 @@ export function Billete({ monto, mes, perdido = 0, ganoPct = null, colores }) {
       <g fontFamily="Figtree, sans-serif" fill={tinta}>
         <text x="176" y="40" fontSize="13" fontWeight="800" letterSpacing="3">INFLACIÓN VS AHORRO</text>
         <text x="96" y="186" textAnchor="middle" fontSize="7.5" letterSpacing="1.6">HORNERO</text>
-        <text x="176" y="186" fontSize="7" letterSpacing="2.2" fillOpacity="0.75">{`MUESTRA SIN VALOR · ${fecha}`}</text>
+        <text x="176" y="166" fontSize="7" letterSpacing="2.2" fillOpacity="0.75">{`MUESTRA SIN VALOR · ${fecha}`}</text>
       </g>
       <g fontFamily="'Bodoni Moda', serif" fontWeight="700" fontSize={tam} letterSpacing="-1">
         <text x="174" y="134" fill={fondo} stroke={fondo} strokeWidth="6" strokeLinejoin="round" aria-hidden="true">{textoMostrado}</text>
         <text x="174" y="134" fill={tinta}>{textoMostrado}</text>
       </g>
       {lavado > 0 && (
-        <text x="448" y="182" textAnchor="end" fontFamily="Figtree, sans-serif" fontSize="12.5" fontWeight="700" fill="#2F3A34">
+        <text x="448" y="185" textAnchor="end" fontFamily="Figtree, sans-serif" fontSize="12.5" fontWeight="700" fill="#2F3A34">
           {`${lavado} % se lo comió la inflación`}
         </text>
       )}
       {ganoPct != null && (
-        <text x="448" y="182" textAnchor="end" fontFamily="Figtree, sans-serif" fontSize="13" fontWeight="700" fill="#24493A">
+        <text x="448" y="185" textAnchor="end" fontFamily="Figtree, sans-serif" fontSize="13" fontWeight="700" fill="#24493A">
           {`le ganó ${porcentaje(ganoPct)}`}
         </text>
       )}

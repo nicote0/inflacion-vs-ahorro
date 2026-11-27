@@ -17,6 +17,13 @@ test('con perdido muestra la etiqueta y lo dice en la descripción accesible', (
   expect(screen.getByRole('img').getAttribute('aria-label')).toMatch(/37 por ciento/);
 });
 
+test('la etiqueta de lo perdido va en otro renglón que la leyenda de muestra', () => {
+  render(<Billete monto={2454312} mes="2026-10" perdido={44} colores={COLORES} />);
+  const etiqueta = screen.getByText('44 % se lo comió la inflación');
+  const muestra = screen.getByText('MUESTRA SIN VALOR · OCTUBRE 2026');
+  expect(Math.abs(Number(etiqueta.getAttribute('y')) - Number(muestra.getAttribute('y')))).toBeGreaterThanOrEqual(14);
+});
+
 test('sin pérdida no hay etiqueta', () => {
   render(<Billete monto={100000} mes="2020-01" perdido={0} colores={COLORES} />);
   expect(screen.queryByText(/se lo comió/)).toBeNull();

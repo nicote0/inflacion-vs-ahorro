@@ -112,6 +112,18 @@ export function GraficoLineas({
     .sort((a, b) => a.xi - b.xi);
   const notas = compacto ? [] : ubicarNotas(ancladas, ANCHO);
 
+  // Valores finales a la derecha de cada línea: si dos quedan muy cerca, se separan a 16 px.
+  const finales = series
+    .map((s) => {
+      const ultimo = s.valores.findLastIndex((v) => v != null);
+      return ultimo < 0 ? null : { s, x: x(ultimo) + 6, y: y(s.valores[ultimo]) + 5, valor: s.valores[ultimo] };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.y - b.y);
+  for (let i = 1; i < finales.length; i++) {
+    if (finales[i].y - finales[i - 1].y < 16) finales[i].y = finales[i - 1].y + 16;
+  }
+
   const alMover = (evento) => {
     const caja = evento.currentTarget.getBoundingClientRect();
     const xSvg = ((evento.clientX - caja.left) / caja.width) * ANCHO;
@@ -162,13 +174,10 @@ export function GraficoLineas({
           ))}
         </g>
         <g className="grafico__finales">
-          {series.map((s) => {
-            const ultimo = s.valores.findLastIndex((v) => v != null);
-            return ultimo < 0 ? null : (
-              <text key={s.id} className={resaltada && resaltada !== s.id ? 'final--apagado' : undefined}
-                x={x(ultimo) + 6} y={y(s.valores[ultimo]) + 5} fill={s.colorTexto ?? s.color}>{formatoValor(s.valores[ultimo])}</text>
-            );
-          })}
+          {finales.map(({ s, x: xf, y: yf, valor }) => (
+            <text key={s.id} className={resaltada && resaltada !== s.id ? 'final--apagado' : undefined}
+              x={xf} y={yf} fill={s.colorTexto ?? s.color}>{formatoValor(valor)}</text>
+          ))}
         </g>
         {indice != null && (
           <line className="grafico__cursor" x1={x(indice)} x2={x(indice)} y1={Y_TOPE} y2={Y_BASE} />

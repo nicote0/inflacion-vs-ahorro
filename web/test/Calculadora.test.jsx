@@ -112,8 +112,9 @@ test('el campo del monto acepta solo números y los muestra con puntos de miles'
   montar(api);
   await esperar();
   const campo = screen.getByLabelText('Monto en pesos');
+  // Letras afuera y lo que va después de la coma decimal también: quedan 1, 2, 3 y 4.
   fireEvent.change(campo, { target: { value: '12a3b4,5' } });
-  expect(campo).toHaveValue('12.345');
+  expect(campo).toHaveValue('1.234');
   fireEvent.change(campo, { target: { value: '1500000' } });
   expect(campo).toHaveValue('1.500.000');
   await esperar(400);

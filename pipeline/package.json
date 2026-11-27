@@ -9,7 +9,11 @@
   },
   "scripts": {
     "test": "node --test",
-    "ingesta": "node src/cli.js"
+    "ingesta": "node src/cli.js",
+    "test:db": "node --env-file-if-exists=../.env --test --test-concurrency=1 \"test-db/*.integracion.js\""
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
 }

@@ -32,6 +32,6 @@ export const INDICADOR = {
   type: 'object',
   properties: {
     id: { type: 'string' }, nombre: { type: 'string' }, unidad: { type: 'string' }, fuente: { type: 'string' },
-    periodicidad: { type: 'string', enum: ['diaria', 'mensual'] }, desde: { type: 'string' }, hasta: { type: 'string' },
+    periodicidad: { type: 'string', enum: ['diaria', 'mensual'] }, desde: { type: ['string', 'null'] }, hasta: { type: ['string', 'null'] },
   },
 };

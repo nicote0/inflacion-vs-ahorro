@@ -8,6 +8,7 @@ import rutasIndicadores from './rutas/indicadores.js';
 import rutasSeries from './rutas/series.js';
 import rutasComparativa from './rutas/comparativa.js';
 import rutasFrescura from './rutas/frescura.js';
+import rutasSimulacion from './rutas/simulacion.js';
 
 const CACHE_PUBLICA = 'public, s-maxage=3600, stale-while-revalidate=86400';
 const LOCALHOST = /^http:\/\/localhost(:\d+)?$/;
@@ -46,6 +47,7 @@ export async function crearApp({ obtenerFoto, origenesCors = [], registrarRutasE
   await app.register(rutasSeries);
   await app.register(rutasComparativa);
   await app.register(rutasFrescura);
+  await app.register(rutasSimulacion);
   registrarRutasExtra?.(app);
   return app;
 }

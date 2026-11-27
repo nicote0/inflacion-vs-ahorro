@@ -110,9 +110,12 @@ export function Calculadora({ api, retraso = 400 }) {
   const meses = useMemo(() => (rango ? mesesEntre(rango.mesMinimo, rango.mesMaximo) : []), [rango]);
   const opciones = useMemo(() => (resultado ? ordenarOpciones(resultado.opciones) : []), [resultado]);
 
+  // Solo números: se descarta todo lo demás (y lo que va después de una coma decimal) y se muestran
+  // los puntos de miles mientras se escribe. Tope de 13 cifras (la API acepta hasta 1e12).
   const cambiarMonto = (texto) => {
-    setMontoTexto(texto);
-    setConsulta((c) => ({ ...c, monto: leerMonto(texto) }));
+    const cifras = String(texto).split(',')[0].replace(/[^0-9]/g, '').replace(/^0+/, '').slice(0, 13);
+    setMontoTexto(cifras ? numero(Number(cifras), 0) : '');
+    setConsulta((c) => ({ ...c, monto: leerMonto(cifras) }));
   };
   const cambiarDesde = (desde) => setConsulta((c) => ({ ...c, desde, hasta: c.hasta > desde ? c.hasta : sumarMeses(desde, 1) }));
   const cambiarHasta = (hasta) => setConsulta((c) => ({ ...c, hasta }));

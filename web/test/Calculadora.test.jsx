@@ -107,6 +107,19 @@ test('un error de la API se muestra y los campos siguen habilitados', async () =
   expect(screen.getByLabelText('Monto en pesos')).toBeEnabled();
 });
 
+test('el campo del monto acepta solo números y los muestra con puntos de miles', async () => {
+  const api = apiFalsa();
+  montar(api);
+  await esperar();
+  const campo = screen.getByLabelText('Monto en pesos');
+  fireEvent.change(campo, { target: { value: '12a3b4,5' } });
+  expect(campo).toHaveValue('12.345');
+  fireEvent.change(campo, { target: { value: '1500000' } });
+  expect(campo).toHaveValue('1.500.000');
+  await esperar(400);
+  expect(api.simulacion).toHaveBeenLastCalledWith({ desde: '2020-01', hasta: '2020-03', monto: 1500000 });
+});
+
 test('monto vacío muestra el aviso y no consulta', async () => {
   const api = apiFalsa();
   montar(api);

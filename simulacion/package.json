@@ -1,0 +1,15 @@
+{
+  "name": "simulacion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Simulación de plazo fijo, dólar y pesos quietos contra la inflación",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}

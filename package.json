@@ -1,0 +1,12 @@
+{
+  "name": "inflacion-vs-ahorro",
+  "private": true,
+  "workspaces": [
+    "pipeline",
+    "simulacion"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces"
+  },
+  "license": "MIT"
+}

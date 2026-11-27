@@ -7,6 +7,7 @@ import { manejarError, rutaInexistente } from './errores.js';
 import rutasIndicadores from './rutas/indicadores.js';
 import rutasSeries from './rutas/series.js';
 import rutasComparativa from './rutas/comparativa.js';
+import rutasFrescura from './rutas/frescura.js';
 
 const CACHE_PUBLICA = 'public, s-maxage=3600, stale-while-revalidate=86400';
 const LOCALHOST = /^http:\/\/localhost(:\d+)?$/;
@@ -44,6 +45,7 @@ export async function crearApp({ obtenerFoto, origenesCors = [], registrarRutasE
   await app.register(rutasIndicadores);
   await app.register(rutasSeries);
   await app.register(rutasComparativa);
+  await app.register(rutasFrescura);
   registrarRutasExtra?.(app);
   return app;
 }

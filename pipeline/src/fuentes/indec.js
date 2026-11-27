@@ -10,18 +10,24 @@ export const urlDatos = (fuente) =>
 
 export const urlMetadatos = (fuente) => `${BASE}?ids=${fuente.serie}&limit=1&metadata=full`;
 
-function parsear(contenido) {
+// Filas del CSV tal como llegaron, como texto y sin descartar nada (para staging).
+function filasCrudas(contenido) {
   const lineas = contenido.split(/\r?\n/).filter((l) => l.trim() !== '');
   const encabezado = (lineas[0] ?? '').split(',');
   if (encabezado[0] !== 'indice_tiempo' || encabezado.length < 2) {
     throw new Error('Formato inesperado: el CSV no empieza con la columna indice_tiempo');
   }
+  return lineas.slice(1).map((linea, i) => {
+    const [fecha = '', valor = ''] = linea.split(',');
+    return { fila: i + 1, fecha, valor };
+  });
+}
 
+function parsear(contenido) {
   const observaciones = [];
   let descartadas = 0;
-  for (const linea of lineas.slice(1)) {
-    const [fecha, texto] = linea.split(',');
-    const valor = texto?.trim() === '' ? NaN : Number(texto);
+  for (const { fecha, valor: texto } of filasCrudas(contenido)) {
+    const valor = texto.trim() === '' ? NaN : Number(texto);
     if (FECHA.test(fecha) && Number.isFinite(valor)) {
       observaciones.push({ fecha, valor });
     } else {
@@ -54,4 +60,4 @@ async function declarado(fuente, { fetch }) {
   };
 }
 
-export const indec = { descargar, parsear, declarado };
+export const indec = { descargar, parsear, filasCrudas, declarado };

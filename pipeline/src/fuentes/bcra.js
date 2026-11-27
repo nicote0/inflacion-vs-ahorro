@@ -46,9 +46,9 @@ async function descargar(fuente, { fetch, hoy, tamanioPagina = LIMITE_MAXIMO }) 
   return { contenido: lineas.join('\n') + '\n', extension: 'jsonl' };
 }
 
-function parsear(contenido) {
-  const porFecha = new Map();
-  let descartadas = 0;
+// Los elementos de detalle de todas las páginas, en el orden en que llegaron.
+function detalles(contenido) {
+  const todos = [];
   for (const linea of contenido.split(/\r?\n/).filter((l) => l.trim() !== '')) {
     let cuerpo;
     try {
@@ -56,13 +56,29 @@ function parsear(contenido) {
     } catch {
       throw new Error('Formato inesperado: una página de la copia cruda no es JSON');
     }
-    for (const { fecha, valor } of cuerpo.results?.[0]?.detalle ?? []) {
-      if (!FECHA.test(fecha) || typeof valor !== 'number' || !Number.isFinite(valor) || porFecha.has(fecha)) {
-        descartadas++;
-        continue;
-      }
-      porFecha.set(fecha, valor);
+    todos.push(...(cuerpo.results?.[0]?.detalle ?? []));
+  }
+  return todos;
+}
+
+// Filas tal como llegaron, como texto y sin descartar nada (para staging).
+function filasCrudas(contenido) {
+  return detalles(contenido).map(({ fecha, valor }, i) => ({
+    fila: i + 1,
+    fecha: fecha == null ? '' : String(fecha),
+    valor: valor == null ? '' : String(valor),
+  }));
+}
+
+function parsear(contenido) {
+  const porFecha = new Map();
+  let descartadas = 0;
+  for (const { fecha, valor } of detalles(contenido)) {
+    if (!FECHA.test(fecha) || typeof valor !== 'number' || !Number.isFinite(valor) || porFecha.has(fecha)) {
+      descartadas++;
+      continue;
     }
+    porFecha.set(fecha, valor);
   }
   if (porFecha.size === 0) throw new Error('La respuesta del BCRA llegó sin observaciones');
 
@@ -86,4 +102,4 @@ async function declarado(fuente, { fetch, tamanioPagina = LIMITE_MAXIMO }) {
   };
 }
 
-export const bcra = { descargar, parsear, declarado };
+export const bcra = { descargar, parsear, filasCrudas, declarado };

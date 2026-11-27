@@ -118,6 +118,19 @@ h1, h2, p { margin: 0; }
 .tabla-encabezado { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .tabla-encabezado h2 { font-size: 24px; font-weight: 600; }
 
+.fuentes-estado { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 24px; }
+.fuente { border-top: 1px solid var(--linea); padding-top: 18px; display: flex; flex-direction: column; gap: 14px; }
+.fuente__titulo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.fuente h2 { font-size: 20px; font-weight: 600; }
+.fuente dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 15px; }
+.fuente dt { color: var(--texto-3); }
+.fuente dd { margin: 0; font-family: var(--mono); }
+.estado { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; }
+.estado::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.estado--ok { background: #D6E2D9; color: #24493A; }
+.estado--mal { background: #F2DCCE; color: #8F3612; }
+.estado--neutro { background: #E3E6E0; color: #4D5A52; }
+
 /* Tablas */
 .tabla-caja { overflow-x: auto; border: 1px solid var(--linea); border-radius: 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 15px; }

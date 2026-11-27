@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes } from 'react-router-dom';
 import { Calculadora } from './paginas/Calculadora.jsx';
 import { Series } from './paginas/Series.jsx';
+import { Datos } from './paginas/Datos.jsx';
 import { fechaCorta, nombreMes } from './logica/formato.js';
 
 const ETIQUETAS = { ipc_nacional: 'IPC (INDEC)', dolar_minorista: 'Dólar (BCRA)', tasa_plazo_fijo_30d: 'Tasa (BCRA)' };
@@ -53,6 +54,7 @@ export function App({ api }) {
         <Routes>
           <Route path="/" element={<Calculadora api={api} />} />
           <Route path="/series" element={<Series api={api} />} />
+          <Route path="/datos" element={<Datos api={api} />} />
         </Routes>
       </Marco>
     </BrowserRouter>
